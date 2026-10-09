@@ -3331,6 +3331,31 @@ class Logging(LiteLLMLoggingBaseClass):
         return result_copy
 
 
+_MASKED_SENSITIVE_KEYWORDS = (
+    "authorization",
+    "token",
+    "key",
+    "secret",
+    "vertex_credentials",
+    "credentials",
+    "password",
+    "passwd",
+)
+_MASKED_DEPTH_EXCEEDED = "*****"
+
+
+def _is_sensitive_mask_key(key: object) -> bool:
+    return isinstance(key, str) and any(keyword in key.lower() for keyword in _MASKED_SENSITIVE_KEYWORDS)
+
+
+def _mask_string(value: str, unmasked_length: int, number_of_asterisks: int | None) -> str:
+    if len(value) <= unmasked_length:
+        return "*****"
+    if number_of_asterisks is not None:
+        return value[: unmasked_length // 2] + "*" * number_of_asterisks + value[-unmasked_length // 2 :]
+    return value[: unmasked_length // 2] + "*" * (len(value) - unmasked_length) + value[-unmasked_length // 2 :]
+
+
 def _get_masked_values(
     sensitive_object: dict,
     ignore_sensitive_values: bool = False,
@@ -3343,64 +3368,38 @@ def _get_masked_values(
     """
     Internal debugging helper function
 
-    Masks the headers of the request sent from LiteLLM
+    Masks the headers of the request sent from LiteLLM. Nested dicts and lists are walked
+    iteratively; every string under a sensitive key is masked, and any container nested
+    deeper than ``_max_depth`` is replaced wholesale so oversized payloads fail closed.
 
     Args:
         masked_length: Optional length for the masked portion (number of *). If set, will use exactly this many *
                      regardless of original string length. The total length will be unmasked_length + masked_length.
     """
-    sensitive_keywords = [
-        "authorization",
-        "token",
-        "key",
-        "secret",
-        "vertex_credentials",
-        "credentials",
-        "password",
-        "passwd",
-    ]
-
-    def _mask_nested(v: Any, mask_all: bool) -> Any:
-        if _depth >= _max_depth:
-            return v
-        if isinstance(v, dict):
-            return _get_masked_values(
-                v,
-                ignore_sensitive_values=ignore_sensitive_values,
-                mask_all_values=mask_all,
-                unmasked_length=unmasked_length,
-                number_of_asterisks=number_of_asterisks,
-                _depth=_depth + 1,
-                _max_depth=_max_depth,
-            )
-        if isinstance(v, (list, tuple)):
-            return type(v)(_mask_nested(item, mask_all) for item in v)
-        return v
-
-    def _mask_value(v: Any) -> Any:
-        if isinstance(v, dict):
-            return _mask_nested(v, mask_all=True)
-        if isinstance(v, (list, tuple)):
-            return type(v)(_mask_value(item) for item in v)
-        if not isinstance(v, str):
-            return v
-        if len(v) <= unmasked_length:
-            return "*****"
-        if number_of_asterisks is not None:
-            return v[: unmasked_length // 2] + "*" * number_of_asterisks + v[-unmasked_length // 2 :]
-        return v[: unmasked_length // 2] + "*" * (len(v) - unmasked_length) + v[-unmasked_length // 2 :]
-
     if ignore_sensitive_values:
         return dict(sensitive_object)
 
-    return {
-        k: (
-            _mask_value(v)
-            if mask_all_values or any(sensitive_keyword in k.lower() for sensitive_keyword in sensitive_keywords)
-            else _mask_nested(v, mask_all=False)
-        )
-        for k, v in sensitive_object.items()
-    }
+    masked_root: dict = {}
+    pending: list[tuple[dict | list | tuple, dict | list, bool, int]] = [
+        (sensitive_object, masked_root, mask_all_values, _depth)
+    ]
+    while pending:
+        source, target, inherited_mask, depth = pending.pop()
+        entries = source.items() if isinstance(source, dict) else enumerate(source)
+        for key, value in entries:
+            should_mask = inherited_mask or _is_sensitive_mask_key(key)
+            if isinstance(value, (dict, list, tuple)):
+                if depth >= _max_depth:
+                    masked_child: dict | list | str = _MASKED_DEPTH_EXCEEDED
+                else:
+                    masked_child = {} if isinstance(value, dict) else [None] * len(value)
+                    pending.append((value, masked_child, should_mask, depth + 1))
+            elif should_mask and isinstance(value, str):
+                masked_child = _mask_string(value, unmasked_length, number_of_asterisks)
+            else:
+                masked_child = value
+            target[key] = masked_child
+    return masked_root
 
 
 def set_callbacks(callback_list, function_id=None):

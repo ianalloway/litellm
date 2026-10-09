@@ -1622,6 +1622,15 @@ def test_get_masked_values_masks_secrets_nested_under_non_sensitive_keys():
     assert masked["auth_token"]["nested"][0]["inner"] == "de****ue"
     assert litellm_params["databricks_oauth"]["client_secret"] == "dose-super-secret-value"
 
+    deep = {"api_key": "top-level-secret"}
+    cursor = deep
+    for _ in range(30):
+        cursor["child"] = {"client_secret": "nested-deep-secret"}
+        cursor = cursor["child"]
+    masked_deep = _get_masked_values(deep, unmasked_length=4, number_of_asterisks=4, _max_depth=5)
+    assert masked_deep["api_key"] == "to****et"
+    assert "nested-deep-secret" not in str(masked_deep)
+
 
 @pytest.mark.asyncio
 async def test_e2e_generate_cold_storage_object_key_successful():
