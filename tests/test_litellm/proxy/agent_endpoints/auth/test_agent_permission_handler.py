@@ -26,7 +26,7 @@ class TestAgentRequestHandler:
         """
         Test key/team intersection: when both have restrictions, only common agents are allowed.
         When team has restrictions but key has none, key inherits from team.
-        When neither has restrictions, returns empty list (meaning allow all).
+        When neither has restrictions, returns None (meaning allow all).
         """
         mock_user_auth = UserAPIKeyAuth(
             api_key="test-key",
@@ -64,7 +64,7 @@ class TestAgentRequestHandler:
                 )
                 assert sorted(result) == ["team_agent1", "team_agent2"]
 
-        # Case 3: No restrictions - returns empty list (allow all)
+        # Case 3: No restrictions - returns None (allow all)
         with patch.object(
             AgentRequestHandler, "_get_allowed_agents_for_key"
         ) as mock_key:
@@ -77,7 +77,7 @@ class TestAgentRequestHandler:
                 result = await AgentRequestHandler.get_allowed_agents(
                     user_api_key_auth=mock_user_auth
                 )
-                assert result == []
+                assert result is None
 
     async def test_is_agent_allowed_respects_permissions(self):
         """
@@ -110,11 +110,11 @@ class TestAgentRequestHandler:
                 is False
             )
 
-        # Empty list means no restrictions - should allow any agent
+        # None means no restrictions - should allow any agent
         with patch.object(
             AgentRequestHandler, "get_allowed_agents"
         ) as mock_get_allowed:
-            mock_get_allowed.return_value = []
+            mock_get_allowed.return_value = None
             assert (
                 await AgentRequestHandler.is_agent_allowed(
                     agent_id="any_agent", user_api_key_auth=mock_user_auth
@@ -127,16 +127,35 @@ class TestAgentRequestHandler:
         Test that when user_api_key_auth is None, all agents are allowed (no restrictions).
         """
         result = await AgentRequestHandler.get_allowed_agents(user_api_key_auth=None)
-        assert result == []
+        assert result is None
 
         is_allowed = await AgentRequestHandler.is_agent_allowed(
             agent_id="any_agent", user_api_key_auth=None
         )
         assert is_allowed is True
 
+    async def test_disjoint_key_and_team_agents_deny_every_agent(self):
+        mock_user_auth = UserAPIKeyAuth(
+            api_key="test-key",
+            user_id="test-user",
+            team_id="test-team",
+        )
+
+        with patch.object(
+            AgentRequestHandler, "_get_allowed_agents_for_key", AsyncMock(return_value=["agent-a"])
+        ), patch.object(
+            AgentRequestHandler, "_get_allowed_agents_for_team", AsyncMock(return_value=["agent-b"])
+        ):
+            assert await AgentRequestHandler.get_allowed_agents(user_api_key_auth=mock_user_auth) == []
+            for agent_id in ("agent-a", "agent-b", "agent-c"):
+                assert (
+                    await AgentRequestHandler.is_agent_allowed(agent_id=agent_id, user_api_key_auth=mock_user_auth)
+                    is False
+                )
+
     async def test_get_allowed_agents_handles_errors_gracefully(self):
         """
-        Test that errors during permission lookup are handled gracefully (returns empty list).
+        Test that errors during permission lookup fail closed (returns empty list, denying all agents).
         """
         mock_user_auth = UserAPIKeyAuth(
             api_key="test-key",
