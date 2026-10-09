@@ -542,6 +542,7 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         elif call_type == CallTypes.acreate_batch.value:
             input_file_id = cast(Optional[str], data.get("input_file_id"))
             if input_file_id:
+                await self.check_file_ids_access([input_file_id], user_api_key_dict)
                 model_file_id_mapping = await self.get_model_file_id_mapping(
                     [input_file_id], user_api_key_dict.parent_otel_span
                 )
