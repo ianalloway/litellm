@@ -1599,6 +1599,39 @@ def test_get_masked_values():
     assert masked_values["vertex_credentials"] == "{s****y}"
 
 
+def test_get_masked_values_masks_secrets_nested_under_non_sensitive_keys():
+    from litellm.litellm_core_utils.litellm_logging import _get_masked_values
+
+    litellm_params = {
+        "model": "databricks/agent",
+        "databricks_oauth": {
+            "client_id": "public-client-id",
+            "client_secret": "dose-super-secret-value",
+            "scopes": [{"client_secret": "another-secret-value"}],
+        },
+        "auth_token": {"value": "token-under-sensitive-parent", "nested": [{"inner": "deep-sensitive-value"}]},
+    }
+
+    masked = _get_masked_values(litellm_params, unmasked_length=4, number_of_asterisks=4)
+
+    assert masked["model"] == "databricks/agent"
+    assert masked["databricks_oauth"]["client_id"] == "public-client-id"
+    assert masked["databricks_oauth"]["client_secret"] == "do****ue"
+    assert masked["databricks_oauth"]["scopes"][0]["client_secret"] == "an****ue"
+    assert masked["auth_token"]["value"] == "to****nt"
+    assert masked["auth_token"]["nested"][0]["inner"] == "de****ue"
+    assert litellm_params["databricks_oauth"]["client_secret"] == "dose-super-secret-value"
+
+    deep = {"api_key": "top-level-secret"}
+    cursor = deep
+    for _ in range(30):
+        cursor["child"] = {"client_secret": "nested-deep-secret"}
+        cursor = cursor["child"]
+    masked_deep = _get_masked_values(deep, unmasked_length=4, number_of_asterisks=4, _max_depth=5)
+    assert masked_deep["api_key"] == "to****et"
+    assert "nested-deep-secret" not in str(masked_deep)
+
+
 @pytest.mark.asyncio
 async def test_e2e_generate_cold_storage_object_key_successful():
     """

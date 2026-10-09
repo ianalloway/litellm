@@ -249,7 +249,14 @@ class RouteChecks:
         ):
             RouteChecks._require_auth_pass_through_access(route=route, valid_token=valid_token)
         elif RouteChecks.is_llm_api_route(route=route):
-            pass
+            if _user_role == LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY.value and not (
+                RouteChecks._get_request_method(request=request) in RouteChecks._SAFE_HTTP_METHODS
+                and RouteChecks._is_admin_viewer_readable_llm_route(route=route)
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"user not allowed to access this OpenAI routes, role= {_user_role}",
+                )
         elif RouteChecks.is_info_route(route=route):
             # check if user allowed to call an info route
             if route == "/key/info":
@@ -747,6 +754,23 @@ class RouteChecks:
             "/team/key/bulk_update",
         ]
     )
+
+    _ADMIN_VIEWER_READABLE_LLM_ROUTE_PREFIXES = ("/files", "/v1/files", "/batches", "/v1/batches")
+    _ADMIN_VIEWER_READABLE_MODEL_ROUTE_PREFIXES = ("/models", "/v1/models")
+
+    @staticmethod
+    def _is_admin_viewer_readable_llm_route(route: str) -> bool:
+        """Non-inference LLM routes (model, file and batch listing/retrieval) that
+        PROXY_ADMIN_VIEW_ONLY may read with a safe HTTP method."""
+        if route in RouteChecks._ADMIN_VIEWER_READABLE_MODEL_ROUTE_PREFIXES:
+            return True
+        if ":" not in route and route.startswith(
+            tuple(f"{prefix}/" for prefix in RouteChecks._ADMIN_VIEWER_READABLE_MODEL_ROUTE_PREFIXES)
+        ):
+            return True
+        return route in RouteChecks._ADMIN_VIEWER_READABLE_LLM_ROUTE_PREFIXES or route.startswith(
+            tuple(f"{prefix}/" for prefix in RouteChecks._ADMIN_VIEWER_READABLE_LLM_ROUTE_PREFIXES)
+        )
 
     @staticmethod
     def _check_proxy_admin_viewer_access(

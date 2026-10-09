@@ -228,7 +228,7 @@ async def test_agent_activity_non_admin_no_perms_falls_back_to_owned():
         ),
         patch(
             "litellm.proxy.agent_endpoints.auth.agent_permission_handler.AgentRequestHandler.get_allowed_agents",
-            new=AsyncMock(return_value=[]),  # no explicit agent permissions
+            new=AsyncMock(return_value=None),  # no explicit agent permissions
         ),
         patch(
             "litellm.proxy.agent_endpoints.endpoints.get_daily_activity",
@@ -322,7 +322,7 @@ async def test_agent_activity_keyless_caller_does_not_query_created_by_null():
         ),
         patch(
             "litellm.proxy.agent_endpoints.auth.agent_permission_handler.AgentRequestHandler.get_allowed_agents",
-            new=AsyncMock(return_value=[]),
+            new=AsyncMock(return_value=None),
         ),
         patch(
             "litellm.proxy.agent_endpoints.endpoints.get_daily_activity",
@@ -367,7 +367,7 @@ async def test_agent_activity_non_admin_no_access_returns_empty_page():
         ),
         patch(
             "litellm.proxy.agent_endpoints.auth.agent_permission_handler.AgentRequestHandler.get_allowed_agents",
-            new=AsyncMock(return_value=[]),
+            new=AsyncMock(return_value=None),
         ),
         patch(
             "litellm.proxy.agent_endpoints.endpoints.get_daily_activity",

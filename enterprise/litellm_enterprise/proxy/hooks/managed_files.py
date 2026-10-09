@@ -21,6 +21,7 @@ from litellm.llms.base_llm.managed_resources.isolation import (
     build_list_page,
     build_owner_filter,
     can_access_resource,
+    can_modify_resource,
 )
 from litellm.proxy._types import (
     CallTypes,
@@ -247,14 +248,18 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         return initial_value.file_object
 
     async def can_user_call_unified_file_id(
-        self, unified_file_id: str, user_api_key_dict: UserAPIKeyAuth
+        self,
+        unified_file_id: str,
+        user_api_key_dict: UserAPIKeyAuth,
+        require_write: bool = False,
     ) -> bool:
         managed_file = await self.prisma_client.db.litellm_managedfiletable.find_first(
             where={"unified_file_id": unified_file_id}
         )
 
         if managed_file:
-            return can_access_resource(
+            access_check = can_modify_resource if require_write else can_access_resource
+            return access_check(
                 user_api_key_dict=user_api_key_dict,
                 created_by=managed_file.created_by,
                 resource_team_id=managed_file.team_id,
@@ -265,7 +270,10 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         )
 
     async def can_user_call_unified_object_id(
-        self, unified_object_id: str, user_api_key_dict: UserAPIKeyAuth
+        self,
+        unified_object_id: str,
+        user_api_key_dict: UserAPIKeyAuth,
+        require_write: bool = False,
     ) -> bool:
         managed_object = (
             await self.prisma_client.db.litellm_managedobjecttable.find_first(
@@ -274,7 +282,8 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         )
 
         if managed_object:
-            return can_access_resource(
+            access_check = can_modify_resource if require_write else can_access_resource
+            return access_check(
                 user_api_key_dict=user_api_key_dict,
                 created_by=managed_object.created_by,
                 resource_team_id=managed_object.team_id,
@@ -379,7 +388,10 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         return [OpenAIFileObject(**file_object.file_object) for file_object in file_ids]
 
     async def check_managed_file_id_access(
-        self, data: Dict, user_api_key_dict: UserAPIKeyAuth
+        self,
+        data: Dict,
+        user_api_key_dict: UserAPIKeyAuth,
+        require_write: bool = False,
     ) -> bool:
         retrieve_file_id = cast(Optional[str], data.get("file_id"))
         potential_file_id = (
@@ -389,7 +401,7 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         )
         if potential_file_id and retrieve_file_id:
             if await self.can_user_call_unified_file_id(
-                retrieve_file_id, user_api_key_dict
+                retrieve_file_id, user_api_key_dict, require_write=require_write
             ):
                 return True
             else:
@@ -442,7 +454,11 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
             or call_type == CallTypes.afile_retrieve.value
             or call_type == CallTypes.afile_content.value
         ):
-            await self.check_managed_file_id_access(data, user_api_key_dict)
+            await self.check_managed_file_id_access(
+                data,
+                user_api_key_dict,
+                require_write=call_type == CallTypes.afile_delete.value,
+            )
 
         ### HANDLE TRANSFORMATIONS ###
         # Check both completion and acompletion call types
@@ -526,6 +542,7 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
         elif call_type == CallTypes.acreate_batch.value:
             input_file_id = cast(Optional[str], data.get("input_file_id"))
             if input_file_id:
+                await self.check_file_ids_access([input_file_id], user_api_key_dict)
                 model_file_id_mapping = await self.get_model_file_id_mapping(
                     [input_file_id], user_api_key_dict.parent_otel_span
                 )
@@ -561,7 +578,13 @@ class _PROXY_LiteLLMManagedFiles(CustomLogger, BaseFileEndpoints):
             if potential_llm_object_id and retrieve_object_id:
                 ## VALIDATE USER HAS ACCESS TO THE OBJECT ##
                 if not await self.can_user_call_unified_object_id(
-                    retrieve_object_id, user_api_key_dict
+                    retrieve_object_id,
+                    user_api_key_dict,
+                    require_write=call_type
+                    in (
+                        CallTypes.acancel_batch.value,
+                        CallTypes.acancel_fine_tuning_job.value,
+                    ),
                 ):
                     raise HTTPException(
                         status_code=403,

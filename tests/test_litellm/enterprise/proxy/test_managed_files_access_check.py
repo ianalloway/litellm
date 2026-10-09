@@ -161,6 +161,67 @@ async def test_service_account_blocked_from_other_team_file():
     assert exc_info.value.status_code == 403
 
 
+@pytest.mark.asyncio
+async def test_proxy_admin_viewer_can_retrieve_but_not_delete_file():
+    from litellm.proxy._types import LitellmUserRoles
+    from litellm.types.utils import CallTypes
+
+    unified_file_id = _make_unified_file_id()
+    managed_files = _make_managed_files_instance(
+        file_created_by="user-A",
+        unified_file_id=unified_file_id,
+    )
+    viewer = UserAPIKeyAuth(
+        api_key="sk-viewer",
+        user_id="viewer",
+        user_role=LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY,
+        parent_otel_span=None,
+    )
+
+    await managed_files.async_pre_call_hook(
+        viewer, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_retrieve.value
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await managed_files.async_pre_call_hook(
+            viewer, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_delete.value
+        )
+    assert exc_info.value.status_code == 403
+
+    admin = UserAPIKeyAuth(
+        api_key="sk-admin", user_id="admin", user_role=LitellmUserRoles.PROXY_ADMIN, parent_otel_span=None
+    )
+    await managed_files.async_pre_call_hook(
+        admin, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_delete.value
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_batch_blocks_other_tenant_input_file():
+    from litellm.types.utils import CallTypes
+
+    unified_file_id = _make_unified_file_id()
+    managed_files = _make_managed_files_instance(
+        file_created_by="user-A",
+        file_team_id="team-A",
+        unified_file_id=unified_file_id,
+    )
+    managed_files.get_model_file_id_mapping = AsyncMock(return_value={})
+    other = UserAPIKeyAuth(api_key="sk-b", user_id="user-B", team_id="team-B", parent_otel_span=None)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await managed_files.async_pre_call_hook(
+            other, MagicMock(), {"input_file_id": unified_file_id}, CallTypes.acreate_batch.value
+        )
+    assert exc_info.value.status_code == 403
+    managed_files.get_model_file_id_mapping.assert_not_called()
+
+    owner = _make_user_api_key_dict("user-A")
+    await managed_files.async_pre_call_hook(
+        owner, MagicMock(), {"input_file_id": unified_file_id}, CallTypes.acreate_batch.value
+    )
+    managed_files.get_model_file_id_mapping.assert_awaited_once()
+
+
 # --- Option C fix test: check_batch_cost bypasses managed files hook ---
 
 

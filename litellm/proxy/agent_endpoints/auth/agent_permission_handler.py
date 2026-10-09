@@ -34,35 +34,28 @@ class AgentRequestHandler:
     @staticmethod
     async def get_allowed_agents(
         user_api_key_auth: Optional[UserAPIKeyAuth] = None,
-    ) -> List[str]:
+    ) -> list[str] | None:
         """
         Get list of allowed agent IDs for the given user/key based on permissions.
 
         Returns:
-            List[str]: List of allowed agent IDs. Empty list means no restrictions (allow all).
+            None when neither the key nor the team restricts agents (allow all).
+            Otherwise the permitted agent IDs; an empty list means no agent is permitted.
         """
         try:
-            allowed_agents: List[str] = []
             allowed_agents_for_key = await AgentRequestHandler._get_allowed_agents_for_key(user_api_key_auth)
             allowed_agents_for_team = await AgentRequestHandler._get_allowed_agents_for_team(user_api_key_auth)
-
-            # If team has agent restrictions, handle inheritance and intersection logic
-            if len(allowed_agents_for_team) > 0:
-                if len(allowed_agents_for_key) > 0:
-                    # Key has its own agent permissions - use intersection with team permissions
-                    for agent_id in allowed_agents_for_key:
-                        if agent_id in allowed_agents_for_team:
-                            allowed_agents.append(agent_id)
-                else:
-                    # Key has no agent permissions - inherit from team
-                    allowed_agents = allowed_agents_for_team
-            else:
-                allowed_agents = allowed_agents_for_key
-
-            return list(set(allowed_agents))
         except Exception as e:
             verbose_logger.warning(f"Failed to get allowed agents: {str(e)}")
             return []
+
+        if not allowed_agents_for_team and not allowed_agents_for_key:
+            return None
+        if not allowed_agents_for_team:
+            return list(set(allowed_agents_for_key))
+        if not allowed_agents_for_key:
+            return list(set(allowed_agents_for_team))
+        return list(set(allowed_agents_for_key) & set(allowed_agents_for_team))
 
     @staticmethod
     async def is_agent_allowed(
@@ -80,12 +73,7 @@ class AgentRequestHandler:
             bool: True if agent is allowed, False otherwise
         """
         allowed_agents = await AgentRequestHandler.get_allowed_agents(user_api_key_auth)
-
-        # Empty list means no restrictions - allow all
-        if len(allowed_agents) == 0:
-            return True
-
-        return agent_id in allowed_agents
+        return allowed_agents is None or agent_id in allowed_agents
 
     @staticmethod
     def _get_key_object_permission(

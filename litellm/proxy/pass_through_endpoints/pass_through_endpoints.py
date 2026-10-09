@@ -50,11 +50,13 @@ from litellm.proxy._types import (
     ConfigFieldInfo,
     ConfigFieldUpdate,
     LiteLLMRoutes,
+    LitellmUserRoles,
     PassThroughEndpointResponse,
     PassThroughGenericEndpoint,
     ProxyException,
     UserAPIKeyAuth,
 )
+from litellm.proxy.auth.auth_utils import is_pass_through_auth_required
 from litellm.proxy.auth.user_api_key_auth import user_api_key_auth
 from litellm.proxy.common_request_processing import ProxyBaseLLMRequestProcessing
 from litellm.proxy.common_utils.http_parsing_utils import (
@@ -2738,9 +2740,8 @@ async def _register_pass_through_endpoint(
     forward_headers = endpoint_data.get("forward_headers")
     merge_query_params = endpoint_data.get("merge_query_params")
     default_query_params = endpoint_data.get("default_query_params")
-    auth = endpoint_data.get("auth")
     dependencies = None
-    auth_enforced = auth is not None and str(auth).lower() == "true"
+    auth_enforced = is_pass_through_auth_required(endpoint_data.get("auth"))
 
     if auth_enforced:
         # Authentication on a pass-through endpoint used to be enterprise-only.
@@ -2783,7 +2784,7 @@ async def _register_pass_through_endpoint(
     visited_endpoints.add(f"{endpoint_id}:exact:{path}:{methods_str}")
 
     if endpoint_data.get("include_subpath", False) is True:
-        if auth is not None and str(auth).lower() == "true":
+        if auth_enforced:
             wildcard_path = path.rstrip("/") + "/*"
             if wildcard_path not in LiteLLMRoutes.openai_routes.value:
                 LiteLLMRoutes.openai_routes.value.append(wildcard_path)
@@ -2913,6 +2914,23 @@ def _get_pass_through_endpoints_from_config() -> List[PassThroughGenericEndpoint
     return returned_endpoints
 
 
+def _redact_config_pass_through_endpoints(
+    endpoints: list[PassThroughGenericEndpoint],
+    user_api_key_dict: UserAPIKeyAuth,
+) -> list[PassThroughGenericEndpoint]:
+    if user_api_key_dict.user_role == LitellmUserRoles.PROXY_ADMIN:
+        return endpoints
+    return [
+        endpoint.model_copy(
+            update={
+                "headers": {name: "REDACTED" for name in endpoint.headers},
+                "default_query_params": {name: "REDACTED" for name in endpoint.default_query_params},
+            }
+        )
+        for endpoint in endpoints
+    ]
+
+
 async def _get_pass_through_endpoints_from_db(
     endpoint_id: Optional[str] = None,
     user_api_key_dict: Optional[UserAPIKeyAuth] = None,
@@ -3037,7 +3055,9 @@ async def get_pass_through_endpoints(
     )
 
     # Get endpoints from config file (read-only, not editable via UI)
-    config_endpoints = _get_pass_through_endpoints_from_config()
+    config_endpoints = _redact_config_pass_through_endpoints(
+        _get_pass_through_endpoints_from_config(), user_api_key_dict=user_api_key_dict
+    )
 
     # Merge: config endpoints not in DB + all DB endpoints (DB overrides config for same path)
     db_paths = {ep.path for ep in db_endpoints}

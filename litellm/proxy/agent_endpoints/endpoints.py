@@ -241,8 +241,7 @@ async def get_agents(
             # Get allowed agents from object_permission (key/team level)
             allowed_agent_ids = await AgentRequestHandler.get_allowed_agents(user_api_key_auth=user_api_key_dict)
 
-            # If no restrictions (empty list), return all agents
-            if len(allowed_agent_ids) == 0:
+            if allowed_agent_ids is None:
                 returned_agents = global_agent_registry.get_agent_list()
             else:
                 # Filter agents by allowed IDs
@@ -1046,14 +1045,14 @@ async def get_agent_daily_activity(
     where_condition: Dict[str, Any] = {}
     if not _user_has_admin_view(user_api_key_dict):
         permitted_agent_ids = await AgentRequestHandler.get_allowed_agents(user_api_key_auth=user_api_key_dict)
-        # `get_allowed_agents` returns an empty list when the caller's key
+        # `get_allowed_agents` returns None when the caller's key
         # and team carry no agent restrictions. For activity scoping that's
         # not "see everything" — fall back to the agents the caller
         # created so they cannot enumerate other tenants' agents.
         # Guard against `user_id is None`: a literal None in Prisma
         # `where={"created_by": None}` resolves to ``created_by IS NULL``
         # and would expose every ownerless agent's rows.
-        if not permitted_agent_ids:
+        if permitted_agent_ids is None:
             if user_api_key_dict.user_id is None:
                 permitted_agent_ids = []
             else:
