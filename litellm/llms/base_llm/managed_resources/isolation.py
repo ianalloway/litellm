@@ -12,6 +12,7 @@ unscoped query.
 from typing import Any, Dict, List, Optional
 
 from litellm.proxy._types import (
+    LitellmUserRoles,
     UserAPIKeyAuth,
     user_api_key_has_admin_view as _user_has_admin_view,
 )
@@ -83,13 +84,31 @@ def can_access_resource(
     """
     if _user_has_admin_view(user_api_key_dict):
         return True
+    return _is_resource_owner(user_api_key_dict, created_by, resource_team_id)
 
+
+def can_modify_resource(
+    user_api_key_dict: UserAPIKeyAuth,
+    created_by: str | None,
+    resource_team_id: str | None,
+) -> bool:
+    """Return True iff the caller may delete/cancel a managed resource.
+
+    Unlike ``can_access_resource``, read-only admin roles get no bypass here.
+    """
+    if user_api_key_dict.user_role == LitellmUserRoles.PROXY_ADMIN:
+        return True
+    return _is_resource_owner(user_api_key_dict, created_by, resource_team_id)
+
+
+def _is_resource_owner(
+    user_api_key_dict: UserAPIKeyAuth,
+    created_by: str | None,
+    resource_team_id: str | None,
+) -> bool:
     user_id = user_api_key_dict.user_id
     if user_id is not None and created_by is not None and created_by == user_id:
         return True
 
     team_id = user_api_key_dict.team_id
-    if team_id is not None and resource_team_id is not None and resource_team_id == team_id:
-        return True
-
-    return False
+    return team_id is not None and resource_team_id is not None and resource_team_id == team_id

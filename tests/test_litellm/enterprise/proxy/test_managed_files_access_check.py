@@ -161,6 +161,40 @@ async def test_service_account_blocked_from_other_team_file():
     assert exc_info.value.status_code == 403
 
 
+@pytest.mark.asyncio
+async def test_proxy_admin_viewer_can_retrieve_but_not_delete_file():
+    from litellm.proxy._types import LitellmUserRoles
+    from litellm.types.utils import CallTypes
+
+    unified_file_id = _make_unified_file_id()
+    managed_files = _make_managed_files_instance(
+        file_created_by="user-A",
+        unified_file_id=unified_file_id,
+    )
+    viewer = UserAPIKeyAuth(
+        api_key="sk-viewer",
+        user_id="viewer",
+        user_role=LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY,
+        parent_otel_span=None,
+    )
+
+    await managed_files.async_pre_call_hook(
+        viewer, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_retrieve.value
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await managed_files.async_pre_call_hook(
+            viewer, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_delete.value
+        )
+    assert exc_info.value.status_code == 403
+
+    admin = UserAPIKeyAuth(
+        api_key="sk-admin", user_id="admin", user_role=LitellmUserRoles.PROXY_ADMIN, parent_otel_span=None
+    )
+    await managed_files.async_pre_call_hook(
+        admin, MagicMock(), {"file_id": unified_file_id}, CallTypes.afile_delete.value
+    )
+
+
 # --- Option C fix test: check_batch_cost bypasses managed files hook ---
 
 

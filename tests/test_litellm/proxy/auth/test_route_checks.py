@@ -124,6 +124,65 @@ def test_proxy_admin_viewer_config_update_route_rejected():
 
 
 @pytest.mark.parametrize(
+    "route,method,expect_allowed",
+    [
+        ("/v1/files/file-abc123", "DELETE", False),
+        ("/chat/completions", "POST", False),
+        ("/v1/embeddings", "POST", False),
+        ("/v1/files", "POST", False),
+        ("/v1/batches/batch-1/cancel", "POST", False),
+        ("/v1/realtime", "GET", False),
+        ("/v1/models", "GET", True),
+        ("/models", "GET", True),
+        ("/v1/files", "GET", True),
+        ("/v1/files/file-abc123", "GET", True),
+        ("/v1/batches", "GET", True),
+        ("/v1/batches/batch-1", "GET", True),
+    ],
+)
+def test_proxy_admin_viewer_llm_api_routes_read_only(route, method, expect_allowed):
+    """View-only admins keep read access to model/file/batch listing and
+    retrieval, but the generic llm-route allowance must not let them run
+    inference or mutate files/batches."""
+    assert RouteChecks.is_llm_api_route(route=route) is True
+    user_obj = LiteLLM_UserTable(
+        user_id="viewer_user",
+        user_email="viewer@example.com",
+        user_role=LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY.value,
+    )
+    valid_token = UserAPIKeyAuth(
+        user_id="viewer_user",
+        user_role=LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY.value,
+    )
+    request = MagicMock(spec=Request)
+    request.query_params = {}
+    request.method = method
+
+    def _check(role, token, user):
+        RouteChecks.non_proxy_admin_allowed_routes_check(
+            user_obj=user,
+            _user_role=role,
+            route=route,
+            request=request,
+            valid_token=token,
+            request_data={},
+        )
+
+    if expect_allowed:
+        _check(LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY.value, valid_token, user_obj)
+    else:
+        with pytest.raises(HTTPException) as exc_info:
+            _check(LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY.value, valid_token, user_obj)
+        assert exc_info.value.status_code == 403
+
+    _check(
+        LitellmUserRoles.INTERNAL_USER.value,
+        UserAPIKeyAuth(user_id="u", user_role=LitellmUserRoles.INTERNAL_USER.value),
+        LiteLLM_UserTable(user_id="u", user_role=LitellmUserRoles.INTERNAL_USER.value),
+    )
+
+
+@pytest.mark.parametrize(
     "blocked_route",
     [
         # team write routes that previously fell through the blocklist
