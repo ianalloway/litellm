@@ -3360,19 +3360,28 @@ def _get_masked_values(
         "passwd",
     ]
 
-    def _mask_value(v: Any) -> Any:
+    def _mask_nested(v: Any, mask_all: bool) -> Any:
+        if _depth >= _max_depth:
+            return v
         if isinstance(v, dict):
-            if _depth >= _max_depth:
-                return v
             return _get_masked_values(
                 v,
                 ignore_sensitive_values=ignore_sensitive_values,
-                mask_all_values=mask_all_values,
+                mask_all_values=mask_all,
                 unmasked_length=unmasked_length,
                 number_of_asterisks=number_of_asterisks,
                 _depth=_depth + 1,
                 _max_depth=_max_depth,
             )
+        if isinstance(v, (list, tuple)):
+            return type(v)(_mask_nested(item, mask_all) for item in v)
+        return v
+
+    def _mask_value(v: Any) -> Any:
+        if isinstance(v, dict):
+            return _mask_nested(v, mask_all=True)
+        if isinstance(v, (list, tuple)):
+            return type(v)(_mask_value(item) for item in v)
         if not isinstance(v, str):
             return v
         if len(v) <= unmasked_length:
@@ -3381,12 +3390,14 @@ def _get_masked_values(
             return v[: unmasked_length // 2] + "*" * number_of_asterisks + v[-unmasked_length // 2 :]
         return v[: unmasked_length // 2] + "*" * (len(v) - unmasked_length) + v[-unmasked_length // 2 :]
 
+    if ignore_sensitive_values:
+        return dict(sensitive_object)
+
     return {
         k: (
-            v
-            if ignore_sensitive_values
-            or not any(sensitive_keyword in k.lower() for sensitive_keyword in sensitive_keywords)
-            else _mask_value(v)
+            _mask_value(v)
+            if mask_all_values or any(sensitive_keyword in k.lower() for sensitive_keyword in sensitive_keywords)
+            else _mask_nested(v, mask_all=False)
         )
         for k, v in sensitive_object.items()
     }
