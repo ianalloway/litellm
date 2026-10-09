@@ -50,6 +50,7 @@ from litellm.proxy._types import (
     ConfigFieldInfo,
     ConfigFieldUpdate,
     LiteLLMRoutes,
+    LitellmUserRoles,
     PassThroughEndpointResponse,
     PassThroughGenericEndpoint,
     ProxyException,
@@ -2913,6 +2914,23 @@ def _get_pass_through_endpoints_from_config() -> List[PassThroughGenericEndpoint
     return returned_endpoints
 
 
+def _redact_config_pass_through_endpoints(
+    endpoints: list[PassThroughGenericEndpoint],
+    user_api_key_dict: UserAPIKeyAuth,
+) -> list[PassThroughGenericEndpoint]:
+    if user_api_key_dict.user_role == LitellmUserRoles.PROXY_ADMIN:
+        return endpoints
+    return [
+        endpoint.model_copy(
+            update={
+                "headers": {name: "REDACTED" for name in endpoint.headers},
+                "default_query_params": {name: "REDACTED" for name in endpoint.default_query_params},
+            }
+        )
+        for endpoint in endpoints
+    ]
+
+
 async def _get_pass_through_endpoints_from_db(
     endpoint_id: Optional[str] = None,
     user_api_key_dict: Optional[UserAPIKeyAuth] = None,
@@ -3037,7 +3055,9 @@ async def get_pass_through_endpoints(
     )
 
     # Get endpoints from config file (read-only, not editable via UI)
-    config_endpoints = _get_pass_through_endpoints_from_config()
+    config_endpoints = _redact_config_pass_through_endpoints(
+        _get_pass_through_endpoints_from_config(), user_api_key_dict=user_api_key_dict
+    )
 
     # Merge: config endpoints not in DB + all DB endpoints (DB overrides config for same path)
     db_paths = {ep.path for ep in db_endpoints}

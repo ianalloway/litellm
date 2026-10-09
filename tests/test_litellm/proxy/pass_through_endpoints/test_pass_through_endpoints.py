@@ -2055,7 +2055,7 @@ async def test_get_pass_through_endpoints_includes_config_and_db():
                 mock_get_db.return_value = db_objects
                 mock_get_config.return_value = config_objects
 
-                mock_user = MagicMock(spec=UserAPIKeyAuth)
+                mock_user = UserAPIKeyAuth(user_role="proxy_admin")
 
                 result = await get_pass_through_endpoints(
                     endpoint_id=None,
@@ -2110,6 +2110,49 @@ def test_get_pass_through_endpoints_from_config_skips_malformed():
     assert "/valid/2" in paths
     for ep in result:
         assert ep.is_from_config is True
+
+
+@pytest.mark.asyncio
+async def test_get_pass_through_endpoints_redacts_config_headers_for_viewer():
+    from litellm.proxy._types import LitellmUserRoles, UserAPIKeyAuth
+    from litellm.proxy.pass_through_endpoints.pass_through_endpoints import (
+        get_pass_through_endpoints,
+    )
+
+    upstream_secret = "Bearer upstream-secret-value"
+    config_passthrough_endpoints = [
+        {
+            "path": "/v1/upstream",
+            "target": "https://upstream.example.com",
+            "headers": {"Authorization": upstream_secret},
+            "default_query_params": {"api_key": "query-secret-value", "version": "1"},
+        }
+    ]
+
+    async def _call(role):
+        with (
+            patch("litellm.proxy.proxy_server.prisma_client", MagicMock()),
+            patch("litellm.proxy.proxy_server.config_passthrough_endpoints", config_passthrough_endpoints),
+            patch(
+                "litellm.proxy.pass_through_endpoints.pass_through_endpoints._get_pass_through_endpoints_from_db",
+                new=AsyncMock(return_value=[]),
+            ),
+        ):
+            return await get_pass_through_endpoints(
+                endpoint_id=None,
+                user_api_key_dict=UserAPIKeyAuth(user_role=role),
+                team_id=None,
+            )
+
+    viewer_result = await _call(LitellmUserRoles.PROXY_ADMIN_VIEW_ONLY)
+    assert "upstream-secret-value" not in viewer_result.model_dump_json()
+    assert "query-secret-value" not in viewer_result.model_dump_json()
+    assert viewer_result.endpoints[0].headers == {"Authorization": "REDACTED"}
+    assert viewer_result.endpoints[0].default_query_params == {"api_key": "REDACTED", "version": "REDACTED"}
+    assert viewer_result.endpoints[0].target == "https://upstream.example.com"
+
+    admin_result = await _call(LitellmUserRoles.PROXY_ADMIN)
+    assert admin_result.endpoints[0].headers == {"Authorization": upstream_secret}
 
 
 @pytest.mark.asyncio
