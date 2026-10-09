@@ -2417,3 +2417,42 @@ class TestGetKeyTagRateLimits:
     def test_returns_none_when_unset(self):
         key = UserAPIKeyAuth(api_key="sk-123")
         assert get_key_tag_rpm_limit(key) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "peer_ip,expect_allowed",
+    [
+        ("203.0.113.9", False),
+        ("192.168.1.1", True),
+    ],
+)
+async def test_global_allowed_ips_ignores_x_forwarded_for_from_untrusted_peer(peer_ip, expect_allowed):
+    from fastapi import HTTPException, Request
+
+    from litellm.proxy.auth.auth_utils import pre_db_read_auth_checks
+
+    request = Request(
+        scope={
+            "type": "http",
+            "method": "POST",
+            "path": "/chat/completions",
+            "headers": [(b"x-forwarded-for", b"10.0.0.5")],
+            "query_string": b"",
+            "client": (peer_ip, 12345),
+        }
+    )
+    general_settings = {
+        "allowed_ips": ["10.0.0.5"],
+        "use_x_forwarded_for": True,
+        "trusted_proxy_ranges": ["192.168.0.0/16"],
+    }
+
+    with patch("litellm.proxy.proxy_server.general_settings", general_settings):
+        if expect_allowed:
+            await pre_db_read_auth_checks(request=request, request_data={}, route="/chat/completions")
+            return
+        with pytest.raises(HTTPException) as exc_info:
+            await pre_db_read_auth_checks(request=request, request_data={}, route="/chat/completions")
+    assert exc_info.value.status_code == 403
+    assert peer_ip in str(exc_info.value.detail)

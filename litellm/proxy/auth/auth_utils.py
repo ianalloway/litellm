@@ -14,6 +14,8 @@ from litellm.constants import MINIMUM_CUSTOM_KEY_LENGTH, STANDARD_CUSTOMER_ID_HE
 from litellm.litellm_core_utils.safe_json_loads import safe_json_loads
 from litellm.litellm_core_utils.url_utils import SSRFError, validate_url
 from litellm.proxy._types import *
+from litellm.proxy.auth.network import TrustedProxyConfig, resolve_client_ip
+from litellm.proxy.auth.trusted_proxy_utils import get_trusted_proxy_cidrs
 from litellm.types.router import CONFIGURABLE_CLIENTSIDE_AUTH_PARAMS
 from litellm.types.utils import CustomPricingLiteLLMParams
 
@@ -39,15 +41,23 @@ def _check_valid_ip(
     allowed_ips: Optional[List[str]],
     request: Request,
     use_x_forwarded_for: Optional[bool] = False,
+    trusted_proxy_cidrs: list[str] | None = None,
 ) -> Tuple[bool, Optional[str]]:
     """
-    Returns if ip is allowed or not
+    Returns if ip is allowed or not.
+
+    X-Forwarded-For is honored only when the direct peer is in ``trusted_proxy_cidrs``.
     """
     if allowed_ips is None:  # if not set, assume true
         return True, None
 
-    # if general_settings.get("use_x_forwarded_for") is True then use x-forwarded-for
-    client_ip = _get_request_ip_address(request=request, use_x_forwarded_for=use_x_forwarded_for)
+    client_ip, _ = resolve_client_ip(
+        request,
+        TrustedProxyConfig(
+            use_forwarded_for=use_x_forwarded_for is True,
+            trusted_proxy_cidrs=trusted_proxy_cidrs or [],
+        ),
+    )
 
     # Check if IP address is allowed
     if client_ip not in allowed_ips:
@@ -447,6 +457,7 @@ async def pre_db_read_auth_checks(
     is_valid_ip, passed_in_ip = _check_valid_ip(
         allowed_ips=general_settings.get("allowed_ips", None),
         use_x_forwarded_for=general_settings.get("use_x_forwarded_for", False),
+        trusted_proxy_cidrs=get_trusted_proxy_cidrs(general_settings),
         request=request,
     )
 
