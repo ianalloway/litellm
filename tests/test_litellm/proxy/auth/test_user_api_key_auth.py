@@ -2916,6 +2916,71 @@ async def test_centralized_common_checks_tolerates_db_errors_when_fetching_conte
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("auth_setting,expect_authz", [("omitted", True), (False, False)])
+async def test_centralized_common_checks_yaml_pass_through_omitted_auth_is_authorized(auth_setting, expect_authz):
+    """A YAML pass-through endpoint without an ``auth`` key must default to
+    authenticated everywhere: the centralized gate runs and the route is
+    registered as auth-enforced so keys lacking allowed_passthrough_routes are
+    denied. Only an explicit ``auth: false`` opts out."""
+    import litellm.proxy.proxy_server as _proxy_server_mod
+    from fastapi import FastAPI, HTTPException, Request
+    from starlette.datastructures import URL
+
+    from litellm.proxy.pass_through_endpoints import pass_through_endpoints as passthrough_mod
+
+    route = f"/yaml-upstream-{auth_setting}"
+    endpoint = {"path": route, "target": "https://upstream.example.com"}
+    if auth_setting != "omitted":
+        endpoint["auth"] = auth_setting
+
+    token = UserAPIKeyAuth(api_key="sk-test", user_id="u1", user_role=LitellmUserRoles.INTERNAL_USER)
+    request = Request(scope={"type": "http", "method": "POST", "headers": [], "query_string": b""})
+    request._url = URL(url=route)
+
+    attrs = _proxy_attrs_for_centralized_checks(user_custom_auth=None)
+    attrs["general_settings"] = {"pass_through_endpoints": [dict(endpoint)]}
+    originals = {a: getattr(_proxy_server_mod, a, None) for a in attrs}
+    openai_routes_before = list(LiteLLMRoutes.openai_routes.value)
+    try:
+        for k, v in attrs.items():
+            setattr(_proxy_server_mod, k, v)
+        await passthrough_mod._register_pass_through_endpoint(
+            endpoint=dict(endpoint), app=FastAPI(), premium_user=False, visited_endpoints=set()
+        )
+        assert RouteChecks.is_auth_enforced_pass_through_route(route=route, method="POST") is expect_authz
+
+        with patch(
+            "litellm.proxy.auth.user_api_key_auth.common_checks",
+            new_callable=AsyncMock,
+        ) as mock_checks:
+            await _run_centralized_common_checks(
+                user_api_key_auth_obj=token,
+                request=request,
+                request_data={},
+                route=route,
+            )
+            assert mock_checks.await_count == (1 if expect_authz else 0)
+
+        if expect_authz:
+            with pytest.raises(HTTPException) as exc_info:
+                RouteChecks.non_proxy_admin_allowed_routes_check(
+                    user_obj=None,
+                    _user_role=LitellmUserRoles.INTERNAL_USER,
+                    route=route,
+                    request=request,
+                    valid_token=token,
+                    request_data={},
+                )
+            assert exc_info.value.status_code == 403
+    finally:
+        for k, v in originals.items():
+            setattr(_proxy_server_mod, k, v)
+        LiteLLMRoutes.openai_routes.value[:] = openai_routes_before
+        for key in [k for k, v in passthrough_mod._registered_pass_through_routes.items() if v.get("path") == route]:
+            passthrough_mod._registered_pass_through_routes.pop(key, None)
+
+
+@pytest.mark.asyncio
 async def test_centralized_common_checks_propagates_end_user_budget_error():
     """Regression: ``get_end_user_object`` raises ``litellm.BudgetExceededError``
     internally when an end user is over budget. ``_safe_fetch`` must

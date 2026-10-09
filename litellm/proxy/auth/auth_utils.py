@@ -18,6 +18,11 @@ from litellm.types.router import CONFIGURABLE_CLIENTSIDE_AUTH_PARAMS
 from litellm.types.utils import CustomPricingLiteLLMParams
 
 
+def is_pass_through_auth_required(auth_setting: object) -> bool:
+    """A pass-through endpoint is unauthenticated only when ``auth`` is explicitly ``False``."""
+    return auth_setting is not False
+
+
 def _get_request_ip_address(request: Request, use_x_forwarded_for: Optional[bool] = False) -> Optional[str]:
     client_ip = None
     if use_x_forwarded_for is True and "x-forwarded-for" in request.headers:

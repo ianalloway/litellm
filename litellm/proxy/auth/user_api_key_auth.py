@@ -58,6 +58,7 @@ from litellm.proxy.auth.auth_utils import (
     get_model_from_request,
     get_request_route,
     get_request_route_template,
+    is_pass_through_auth_required,
     normalize_request_route,
     pre_db_read_auth_checks,
     route_in_additonal_public_routes,
@@ -639,7 +640,7 @@ async def check_api_key_for_custom_headers_or_pass_through_endpoints(
                 # Pydantic ``PassThroughGenericEndpoint.auth`` default
                 # is also True, but raw config dicts skip that path —
                 # so this runtime check has to default to True too.
-                if endpoint.get("auth", True) is not True:
+                if not is_pass_through_auth_required(endpoint.get("auth")):
                     return UserAPIKeyAuth()
                 ## IF AUTH ENABLED
                 ### IF CUSTOM PARSER REQUIRED
@@ -2147,7 +2148,11 @@ async def _run_centralized_common_checks(
     pass_through_endpoints = general_settings.get("pass_through_endpoints", None)
     if pass_through_endpoints is not None:
         for endpoint in pass_through_endpoints:
-            if isinstance(endpoint, dict) and endpoint.get("path", "") == route and endpoint.get("auth") is not True:
+            if (
+                isinstance(endpoint, dict)
+                and endpoint.get("path", "") == route
+                and not is_pass_through_auth_required(endpoint.get("auth"))
+            ):
                 return
 
     # No-auth dev mode: master_key unset AND no JWT/OAuth2 auth
