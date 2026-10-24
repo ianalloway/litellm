@@ -1599,6 +1599,29 @@ def test_get_masked_values():
     assert masked_values["vertex_credentials"] == "{s****y}"
 
 
+@pytest.mark.parametrize("unmasked_length", [0, -1])
+@pytest.mark.parametrize(
+    ("number_of_asterisks", "expected_key", "expected_authorization"),
+    [(4, "****", "****"), (None, "************", "******************")],
+)
+def test_get_masked_values_fully_redacts_when_no_characters_are_visible(
+    unmasked_length: int,
+    number_of_asterisks: int | None,
+    expected_key: str,
+    expected_authorization: str,
+) -> None:
+    from litellm.litellm_core_utils.litellm_logging import _get_masked_values
+
+    masked = _get_masked_values(
+        {"api_key": "dummy-secret", "headers": [{"Authorization": "Bearer dummy-token"}]},
+        unmasked_length=unmasked_length,
+        number_of_asterisks=number_of_asterisks,
+    )
+
+    assert masked["api_key"] == expected_key
+    assert masked["headers"][0]["Authorization"] == expected_authorization
+
+
 def test_get_masked_values_masks_secrets_nested_under_non_sensitive_keys():
     from litellm.litellm_core_utils.litellm_logging import _get_masked_values
 
