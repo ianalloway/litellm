@@ -3351,6 +3351,8 @@ def _is_sensitive_mask_key(key: object) -> bool:
 def _mask_string(value: str, unmasked_length: int, number_of_asterisks: int | None) -> str:
     if len(value) <= unmasked_length:
         return "*****"
+    if unmasked_length <= 0:
+        return "*" * (number_of_asterisks if number_of_asterisks is not None else len(value))
     if number_of_asterisks is not None:
         return value[: unmasked_length // 2] + "*" * number_of_asterisks + value[-unmasked_length // 2 :]
     return value[: unmasked_length // 2] + "*" * (len(value) - unmasked_length) + value[-unmasked_length // 2 :]
