@@ -1,3 +1,4 @@
+import { createAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ const {
 
   const mockUseAuthorized = vi.fn();
   const mockGetGlobalLitellmHeaderName = vi.fn(() => mockHeaderName);
-  const mockDeriveErrorMessage = vi.fn((errorData: any) => {
+  const mockDeriveErrorMessage = vi.fn((errorData: string | { message?: string; error?: string } | null) => {
     if (typeof errorData === "string") return errorData;
     return errorData?.message || errorData?.error || "An error occurred";
   });
@@ -97,16 +98,6 @@ vi.mock("@/components/networking", () => ({
   handleError: mockHandleError,
 }));
 
-vi.mock("../common/queryKeysFactory", () => ({
-  createQueryKeys: vi.fn((resource: string) => ({
-    all: [resource],
-    lists: () => [resource, "list"],
-    list: (params?: any) => [resource, "list", { params }],
-    details: () => [resource, "detail"],
-    detail: (uid: string) => [resource, "detail", uid],
-  })),
-}));
-
 describe("useProxyConfig", () => {
   let queryClient: QueryClient;
   let fetchSpy: ReturnType<typeof vi.fn>;
@@ -122,16 +113,7 @@ describe("useProxyConfig", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: mockAccessToken,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: mockAccessToken }));
 
     fetchSpy = vi.fn();
     global.fetch = fetchSpy;
@@ -145,7 +127,7 @@ describe("useProxyConfig", () => {
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render successfully", () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockProxyConfigResponse,
     });
@@ -157,7 +139,7 @@ describe("useProxyConfig", () => {
   });
 
   it("should return proxy config data when query is successful", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockProxyConfigResponse,
     });
@@ -191,7 +173,7 @@ describe("useProxyConfig", () => {
     const errorMessage = "Failed to fetch proxy config";
     const errorResponse = { message: errorMessage };
 
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: false,
       json: async () => errorResponse,
     });
@@ -210,16 +192,7 @@ describe("useProxyConfig", () => {
   });
 
   it("should not execute query when accessToken is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useProxyConfig(ConfigType.GENERAL_SETTINGS), { wrapper });
 
@@ -231,7 +204,7 @@ describe("useProxyConfig", () => {
   });
 
   it("should use correct query key with config type filter", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockProxyConfigResponse,
     });
@@ -247,7 +220,7 @@ describe("useProxyConfig", () => {
 
   it("should handle network errors", async () => {
     const networkError = new Error("Network error");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     const { result } = renderHook(() => useProxyConfig(ConfigType.GENERAL_SETTINGS), { wrapper });
 
@@ -260,7 +233,7 @@ describe("useProxyConfig", () => {
   });
 
   it("should handle empty config response", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => [],
     });
@@ -293,16 +266,7 @@ describe("useDeleteProxyConfigField", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: mockAccessToken,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: mockAccessToken }));
 
     fetchSpy = vi.fn();
     global.fetch = fetchSpy;
@@ -323,7 +287,7 @@ describe("useDeleteProxyConfigField", () => {
   });
 
   it("should successfully delete a proxy config field", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockDeleteResponse,
     });
@@ -357,7 +321,7 @@ describe("useDeleteProxyConfigField", () => {
     const errorMessage = "Failed to delete field";
     const errorResponse = { message: errorMessage };
 
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: false,
       json: async () => errorResponse,
     });
@@ -380,16 +344,7 @@ describe("useDeleteProxyConfigField", () => {
   });
 
   it("should throw error when accessToken is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useDeleteProxyConfigField(), { wrapper });
 
@@ -410,7 +365,7 @@ describe("useDeleteProxyConfigField", () => {
 
   it("should handle network errors during delete", async () => {
     const networkError = new Error("Network error");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     const { result } = renderHook(() => useDeleteProxyConfigField(), { wrapper });
 
@@ -429,7 +384,7 @@ describe("useDeleteProxyConfigField", () => {
   });
 
   it("should invalidate proxyConfig queries after a successful delete", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockDeleteResponse,
     });
@@ -466,7 +421,7 @@ describe("getProxyConfigCall", () => {
   });
 
   it("should successfully fetch proxy config", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockProxyConfigResponse,
     });
@@ -490,7 +445,7 @@ describe("getProxyConfigCall", () => {
     const errorMessage = "Failed to fetch config";
     const errorResponse = { message: errorMessage };
 
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: false,
       json: async () => errorResponse,
     });
@@ -500,7 +455,7 @@ describe("getProxyConfigCall", () => {
 
   it("should handle network errors", async () => {
     const networkError = new Error("Network error");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     await expect(getProxyConfigCall(mockAccessToken, ConfigType.GENERAL_SETTINGS)).rejects.toThrow("Network error");
     expect(consoleErrorSpy).toHaveBeenCalled();
@@ -522,7 +477,7 @@ describe("deleteProxyConfigFieldCall", () => {
   });
 
   it("should successfully delete proxy config field", async () => {
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       json: async () => mockDeleteResponse,
     });
@@ -549,7 +504,7 @@ describe("deleteProxyConfigFieldCall", () => {
     const errorMessage = "Failed to delete field";
     const errorResponse = { message: errorMessage };
 
-    (fetchSpy as any).mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: false,
       json: async () => errorResponse,
     });
@@ -564,7 +519,7 @@ describe("deleteProxyConfigFieldCall", () => {
 
   it("should handle network errors", async () => {
     const networkError = new Error("Network error");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     const deleteRequest: DeleteProxyConfigFieldRequest = {
       config_type: ConfigType.GENERAL_SETTINGS,

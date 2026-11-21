@@ -1,3 +1,4 @@
+import { createAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -36,16 +37,7 @@ describe("useEditSSOSettings", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -60,7 +52,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should successfully update SSO settings", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -85,7 +77,7 @@ describe("useEditSSOSettings", () => {
     const errorMessage = "Failed to update SSO settings";
     const testError = new Error(errorMessage);
 
-    (updateSSOSettings as any).mockRejectedValue(testError);
+    vi.mocked(updateSSOSettings).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -105,16 +97,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should throw error when accessToken is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -128,7 +111,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should update Microsoft SSO settings", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -148,7 +131,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should update generic SSO settings", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -170,7 +153,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should update role mappings", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -195,7 +178,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should update multiple settings at once", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -217,7 +200,7 @@ describe("useEditSSOSettings", () => {
   });
 
   it("should handle null values in params", async () => {
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -241,7 +224,7 @@ describe("useEditSSOSettings", () => {
       resolvePromise = resolve;
     });
 
-    (updateSSOSettings as any).mockReturnValue(pendingPromise);
+    vi.mocked(updateSSOSettings).mockReturnValue(pendingPromise);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -265,7 +248,7 @@ describe("useEditSSOSettings", () => {
   it("should handle network timeout error", async () => {
     const timeoutError = new Error("Network timeout");
 
-    (updateSSOSettings as any).mockRejectedValue(timeoutError);
+    vi.mocked(updateSSOSettings).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -286,7 +269,7 @@ describe("useEditSSOSettings", () => {
     const errorMessage = "Failed to update";
     const testError = new Error(errorMessage);
 
-    (updateSSOSettings as any).mockRejectedValueOnce(testError);
+    vi.mocked(updateSSOSettings).mockRejectedValueOnce(testError);
 
     const { result } = renderHook(() => useEditSSOSettings(), { wrapper });
 
@@ -300,7 +283,7 @@ describe("useEditSSOSettings", () => {
       expect(result.current.isError).toBe(true);
     });
 
-    (updateSSOSettings as any).mockResolvedValue(mockUpdateResponse);
+    vi.mocked(updateSSOSettings).mockResolvedValue(mockUpdateResponse);
 
     result.current.mutateAsync(params);
 

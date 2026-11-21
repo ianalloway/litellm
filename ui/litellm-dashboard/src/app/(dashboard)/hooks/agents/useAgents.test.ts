@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -73,16 +74,7 @@ describe("useAgents", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -90,7 +82,7 @@ describe("useAgents", () => {
 
   it("should return agents data when query is successful", async () => {
     // Mock successful API call
-    (getAgentsList as any).mockResolvedValue(mockAgentsResponse);
+    vi.mocked(getAgentsList).mockResolvedValue(mockAgentsResponse);
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -115,7 +107,7 @@ describe("useAgents", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (getAgentsList as any).mockRejectedValue(testError);
+    vi.mocked(getAgentsList).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -136,16 +128,7 @@ describe("useAgents", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -160,16 +143,7 @@ describe("useAgents", () => {
 
   it("should not execute query when userRole is not an admin role", async () => {
     // Mock non-admin userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "member", // Not in all_admin_roles
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: "member" }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -184,16 +158,7 @@ describe("useAgents", () => {
 
   it("should not execute query when userRole is null", async () => {
     // Mock null userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: null,
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -208,16 +173,7 @@ describe("useAgents", () => {
 
   it("should not execute query when userRole is empty string", async () => {
     // Mock empty string userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: "" }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -232,16 +188,7 @@ describe("useAgents", () => {
 
   it("should not execute query when both accessToken and userRole are missing", async () => {
     // Mock both auth values missing
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userRole: null,
-      userId: "test-user-id",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture({ userId: "test-user-id" }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -256,7 +203,7 @@ describe("useAgents", () => {
 
   it("should execute query when accessToken is present and userRole is Admin", async () => {
     // Mock successful API call
-    (getAgentsList as any).mockResolvedValue(mockAgentsResponse);
+    vi.mocked(getAgentsList).mockResolvedValue(mockAgentsResponse);
 
     // Ensure auth values are set (already done in beforeEach)
     const { result } = renderHook(() => useAgents(), { wrapper });
@@ -272,19 +219,10 @@ describe("useAgents", () => {
 
   it("should execute query when accessToken is present and userRole is proxy_admin", async () => {
     // Mock successful API call
-    (getAgentsList as any).mockResolvedValue(mockAgentsResponse);
+    vi.mocked(getAgentsList).mockResolvedValue(mockAgentsResponse);
 
     // Mock proxy_admin role
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "proxy_admin",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: "proxy_admin" }));
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -299,7 +237,7 @@ describe("useAgents", () => {
 
   it("should return empty agents array when API returns empty data", async () => {
     // Mock API returning empty agents array
-    (getAgentsList as any).mockResolvedValue({ agents: [] });
+    vi.mocked(getAgentsList).mockResolvedValue({ agents: [] });
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 
@@ -317,7 +255,7 @@ describe("useAgents", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (getAgentsList as any).mockRejectedValue(timeoutError);
+    vi.mocked(getAgentsList).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useAgents(), { wrapper });
 

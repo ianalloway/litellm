@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -71,23 +72,14 @@ describe("useSSOSettings", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render", () => {
-    (getSSOSettings as any).mockResolvedValue(mockSSOSettingsResponse);
+    vi.mocked(getSSOSettings).mockResolvedValue(mockSSOSettingsResponse);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -95,7 +87,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should return SSO settings data when query is successful", async () => {
-    (getSSOSettings as any).mockResolvedValue(mockSSOSettingsResponse);
+    vi.mocked(getSSOSettings).mockResolvedValue(mockSSOSettingsResponse);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -117,7 +109,7 @@ describe("useSSOSettings", () => {
     const errorMessage = "Failed to fetch SSO settings";
     const testError = new Error(errorMessage);
 
-    (getSSOSettings as any).mockRejectedValue(testError);
+    vi.mocked(getSSOSettings).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -135,16 +127,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should not execute query when accessToken is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -156,16 +139,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should not execute query when userId is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -177,16 +151,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should not execute query when userRole is missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -198,16 +163,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should not execute query when all auth values are missing", async () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -219,7 +175,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should execute query when all auth values are present", async () => {
-    (getSSOSettings as any).mockResolvedValue(mockSSOSettingsResponse);
+    vi.mocked(getSSOSettings).mockResolvedValue(mockSSOSettingsResponse);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -263,7 +219,7 @@ describe("useSSOSettings", () => {
       },
     };
 
-    (getSSOSettings as any).mockResolvedValue(minimalResponse);
+    vi.mocked(getSSOSettings).mockResolvedValue(minimalResponse);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -279,7 +235,7 @@ describe("useSSOSettings", () => {
   it("should handle network timeout error", async () => {
     const timeoutError = new Error("Network timeout");
 
-    (getSSOSettings as any).mockRejectedValue(timeoutError);
+    vi.mocked(getSSOSettings).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 
@@ -292,7 +248,7 @@ describe("useSSOSettings", () => {
   });
 
   it("should use correct query key", async () => {
-    (getSSOSettings as any).mockResolvedValue(mockSSOSettingsResponse);
+    vi.mocked(getSSOSettings).mockResolvedValue(mockSSOSettingsResponse);
 
     const { result } = renderHook(() => useSSOSettings(), { wrapper });
 

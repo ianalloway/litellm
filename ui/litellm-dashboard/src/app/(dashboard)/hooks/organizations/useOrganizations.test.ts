@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -75,16 +76,7 @@ describe("useOrganizations", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -92,7 +84,7 @@ describe("useOrganizations", () => {
 
   it("should return organizations data when query is successful", async () => {
     // Mock successful API call
-    (organizationListCall as any).mockResolvedValue(mockOrganizations);
+    vi.mocked(organizationListCall).mockResolvedValue(mockOrganizations);
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -117,7 +109,7 @@ describe("useOrganizations", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (organizationListCall as any).mockRejectedValue(testError);
+    vi.mocked(organizationListCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -137,7 +129,7 @@ describe("useOrganizations", () => {
   });
 
   it("passes org_id and org_alias filters to organizationListCall and caches separately from the unfiltered list", async () => {
-    (organizationListCall as any).mockResolvedValue(mockOrganizations);
+    vi.mocked(organizationListCall).mockResolvedValue(mockOrganizations);
 
     const { result } = renderHook(() => useOrganizations({ org_id: "org-1", org_alias: "Test Organization 1" }), {
       wrapper,
@@ -149,7 +141,7 @@ describe("useOrganizations", () => {
 
     expect(organizationListCall).toHaveBeenCalledWith("test-access-token", "org-1", "Test Organization 1");
 
-    (organizationListCall as any).mockResolvedValue([]);
+    vi.mocked(organizationListCall).mockResolvedValue([]);
     const { result: unfiltered } = renderHook(() => useOrganizations(), { wrapper });
 
     await waitFor(() => {
@@ -161,7 +153,7 @@ describe("useOrganizations", () => {
   });
 
   it("treats empty-string filters as no filters, writing to the unfiltered cache entry", async () => {
-    (organizationListCall as any).mockResolvedValue(mockOrganizations);
+    vi.mocked(organizationListCall).mockResolvedValue(mockOrganizations);
 
     const { result } = renderHook(() => useOrganizations({ org_id: "", org_alias: "" }), { wrapper });
 
@@ -175,16 +167,7 @@ describe("useOrganizations", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -199,16 +182,7 @@ describe("useOrganizations", () => {
 
   it("should not execute query when userId is missing", async () => {
     // Mock missing userId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -223,16 +197,7 @@ describe("useOrganizations", () => {
 
   it("should not execute query when userRole is missing", async () => {
     // Mock missing userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -247,16 +212,7 @@ describe("useOrganizations", () => {
 
   it("should not execute query when all auth values are missing", async () => {
     // Mock all auth values missing
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -271,7 +227,7 @@ describe("useOrganizations", () => {
 
   it("should execute query when all auth values are present", async () => {
     // Mock successful API call
-    (organizationListCall as any).mockResolvedValue(mockOrganizations);
+    vi.mocked(organizationListCall).mockResolvedValue(mockOrganizations);
 
     // Ensure all auth values are present (already set in beforeEach)
     const { result } = renderHook(() => useOrganizations(), { wrapper });
@@ -287,7 +243,7 @@ describe("useOrganizations", () => {
 
   it("should return empty array when API returns empty data", async () => {
     // Mock API returning empty array
-    (organizationListCall as any).mockResolvedValue([]);
+    vi.mocked(organizationListCall).mockResolvedValue([]);
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -305,7 +261,7 @@ describe("useOrganizations", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (organizationListCall as any).mockRejectedValue(timeoutError);
+    vi.mocked(organizationListCall).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useOrganizations(), { wrapper });
 
@@ -329,23 +285,14 @@ describe("useOrganization", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("seeds initialData from a filtered list cache entry so the detail renders without a loading state", () => {
-    (organizationInfoCall as any).mockResolvedValue(mockOrganizations[1]);
+    vi.mocked(organizationInfoCall).mockResolvedValue(mockOrganizations[1]);
     // Only a filtered list was ever fetched; the unfiltered list({}) entry stays empty.
     queryClient.setQueryData(organizationKeys.list({ filters: { org_id: "org-2" } }), [mockOrganizations[1]]);
 
@@ -357,7 +304,7 @@ describe("useOrganization", () => {
   });
 
   it("falls through to the detail API call when no cached list contains the organization", async () => {
-    (organizationInfoCall as any).mockResolvedValue(mockOrganizations[0]);
+    vi.mocked(organizationInfoCall).mockResolvedValue(mockOrganizations[0]);
     queryClient.setQueryData(organizationKeys.list({ filters: { org_id: "org-2" } }), [mockOrganizations[1]]);
 
     const { result } = renderHook(() => useOrganization("org-1"), { wrapper });
