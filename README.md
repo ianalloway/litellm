@@ -607,7 +607,7 @@ We welcome contributions to LiteLLM! Whether you're fixing bugs, adding features
 
 ## Quick Start for Contributors
 
-This requires uv to be installed.
+Install uv and Python 3.11.5 through 3.14 to work on the SDK or proxy.
 
 ```bash
 git clone https://github.com/BerriAI/litellm.git

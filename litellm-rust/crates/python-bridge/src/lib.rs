@@ -167,7 +167,7 @@ fn aocr(
         .await
         .map_err(core_error_to_pyerr)?;
 
-        Python::with_gil(|py| json_to_py(py, value))
+        Python::attach(|py| json_to_py(py, value))
     })
 }
 
@@ -178,7 +178,7 @@ fn gil_stats(py: Python<'_>) -> PyResult<Py<PyAny>> {
     Ok(stats.into_any().unbind())
 }
 
-#[pymodule]
+#[pymodule(gil_used = true)]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(ocr, module)?)?;
     module.add_function(wrap_pyfunction!(aocr, module)?)?;
