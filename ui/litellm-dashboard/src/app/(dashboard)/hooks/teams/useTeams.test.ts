@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { ReactNode } from "react";
@@ -71,23 +72,14 @@ describe("useTeams", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render", () => {
-    (fetchTeams as any).mockResolvedValue(mockTeams);
+    vi.mocked(fetchTeams).mockResolvedValue(mockTeams);
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -96,7 +88,7 @@ describe("useTeams", () => {
 
   it("should return teams data when query is successful", async () => {
     // Mock successful API call
-    (fetchTeams as any).mockResolvedValue(mockTeams);
+    vi.mocked(fetchTeams).mockResolvedValue(mockTeams);
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -121,7 +113,7 @@ describe("useTeams", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (fetchTeams as any).mockRejectedValue(testError);
+    vi.mocked(fetchTeams).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -142,16 +134,7 @@ describe("useTeams", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -166,16 +149,7 @@ describe("useTeams", () => {
 
   it("should not execute query when accessToken is empty string", async () => {
     // Mock empty string accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: "", token: "" }));
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -190,7 +164,7 @@ describe("useTeams", () => {
 
   it("should execute query when accessToken is present", async () => {
     // Mock successful API call
-    (fetchTeams as any).mockResolvedValue(mockTeams);
+    vi.mocked(fetchTeams).mockResolvedValue(mockTeams);
 
     // Ensure auth values are set (already done in beforeEach)
     const { result } = renderHook(() => useTeams(), { wrapper });
@@ -206,7 +180,7 @@ describe("useTeams", () => {
 
   it("should return empty teams array when API returns empty data", async () => {
     // Mock API returning empty teams array
-    (fetchTeams as any).mockResolvedValue([]);
+    vi.mocked(fetchTeams).mockResolvedValue([]);
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -224,7 +198,7 @@ describe("useTeams", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (fetchTeams as any).mockRejectedValue(timeoutError);
+    vi.mocked(fetchTeams).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -239,19 +213,10 @@ describe("useTeams", () => {
 
   it("should pass userId and userRole to fetchTeams", async () => {
     // Mock successful API call
-    (fetchTeams as any).mockResolvedValue(mockTeams);
+    vi.mocked(fetchTeams).mockResolvedValue(mockTeams);
 
     // Mock specific userId and userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "custom-user-id",
-      userRole: "member",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: "custom-user-id", userRole: "member" }));
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -265,19 +230,10 @@ describe("useTeams", () => {
 
   it("should handle null userId", async () => {
     // Mock successful API call
-    (fetchTeams as any).mockResolvedValue(mockTeams);
+    vi.mocked(fetchTeams).mockResolvedValue(mockTeams);
 
     // Mock null userId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useTeams(), { wrapper });
 
@@ -304,23 +260,14 @@ describe("useTeam", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render", () => {
-    (teamInfoCall as any).mockResolvedValue(mockTeams[0]);
+    vi.mocked(teamInfoCall).mockResolvedValue(mockTeams[0]);
 
     const { result } = renderHook(() => useTeam("team-1"), { wrapper });
 
@@ -328,7 +275,7 @@ describe("useTeam", () => {
   });
 
   it("should return team data when query is successful", async () => {
-    (teamInfoCall as any).mockResolvedValue(mockTeams[0]);
+    vi.mocked(teamInfoCall).mockResolvedValue(mockTeams[0]);
 
     const { result } = renderHook(() => useTeam("team-1"), { wrapper });
 
@@ -350,7 +297,7 @@ describe("useTeam", () => {
     const errorMessage = "Failed to fetch team";
     const testError = new Error(errorMessage);
 
-    (teamInfoCall as any).mockRejectedValue(testError);
+    vi.mocked(teamInfoCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useTeam("team-1"), { wrapper });
 
@@ -368,16 +315,7 @@ describe("useTeam", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useTeam("team-1"), { wrapper });
 
@@ -425,16 +363,7 @@ describe("useTeam", () => {
     // by manually constructing and calling the queryFn logic
 
     // Set up mocks
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null, // Missing accessToken
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     // Import useQueryClient to get access to query client
     const { useQueryClient } = await import("@tanstack/react-query");
@@ -457,16 +386,7 @@ describe("useTeam", () => {
     await expect(testQueryFn()).rejects.toThrow("Missing auth or teamId");
 
     // Also test with missing teamId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
 
     const testQueryFnMissingTeamId = async () => {
       const { accessToken } = mockUseAuthorized();
@@ -484,9 +404,13 @@ describe("useTeam", () => {
 });
 
 describe("teamListCall", () => {
+  const fetchStub = vi.fn();
+  afterEach(() => vi.unstubAllGlobals());
+
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    fetchStub.mockReset();
+    vi.stubGlobal("fetch", fetchStub);
   });
 
   it("should successfully fetch teams list", async () => {
@@ -498,7 +422,7 @@ describe("teamListCall", () => {
       total_pages: 1,
     };
 
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -521,7 +445,7 @@ describe("teamListCall", () => {
   it("should include query parameters when options are provided", async () => {
     const mockResponse = { teams: mockTeams };
 
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -537,7 +461,7 @@ describe("teamListCall", () => {
 
     await teamListCall("test-access-token", 1, 10, options);
 
-    const callUrl = (global.fetch as any).mock.calls[0][0];
+    const callUrl = fetchStub.mock.calls[0][0];
     expect(callUrl).toContain("organization_id=org-1");
     expect(callUrl).toContain("team_id=team-1");
     expect(callUrl).toContain("team_alias=Test+Team"); // URL encoding converts spaces to +
@@ -551,7 +475,7 @@ describe("teamListCall", () => {
   it("should filter out null and undefined parameters", async () => {
     const mockResponse = { teams: mockTeams };
 
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -564,7 +488,7 @@ describe("teamListCall", () => {
 
     await teamListCall("test-access-token", 1, 10, options);
 
-    const callUrl = (global.fetch as any).mock.calls[0][0];
+    const callUrl = fetchStub.mock.calls[0][0];
     expect(callUrl).not.toContain("organization_id");
     expect(callUrl).not.toContain("team_id");
     expect(callUrl).toContain("user_id=user-1");
@@ -572,24 +496,24 @@ describe("teamListCall", () => {
 
   it("should use baseUrl when provided", async () => {
     const { getProxyBaseUrl } = await import("@/components/networking");
-    (getProxyBaseUrl as any).mockReturnValue("https://api.example.com");
+    vi.mocked(getProxyBaseUrl).mockReturnValue("https://api.example.com");
 
     const mockResponse = { teams: mockTeams };
 
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
 
     await teamListCall("test-access-token", 1, 10, {});
 
-    const callUrl = (global.fetch as any).mock.calls[0][0];
+    const callUrl = fetchStub.mock.calls[0][0];
     expect(callUrl).toBe("https://api.example.com/v2/team/list?page=1&page_size=10");
   });
 
   it("should handle error response", async () => {
     const errorData = { error: "Failed to fetch teams" };
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: false,
       json: async () => errorData,
     });
@@ -599,13 +523,13 @@ describe("teamListCall", () => {
 
   it("should handle network errors", async () => {
     const networkError = new Error("Network error");
-    (global.fetch as any).mockRejectedValue(networkError);
+    fetchStub.mockRejectedValue(networkError);
 
     await expect(teamListCall("test-access-token", 1, 10, {})).rejects.toThrow("Network error");
   });
 
   it("should handle error when response.json() fails", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: false,
       json: async () => {
         throw new Error("Invalid JSON");
@@ -617,6 +541,9 @@ describe("teamListCall", () => {
 });
 
 describe("useDeletedTeams", () => {
+  const fetchStub = vi.fn();
+  afterEach(() => vi.unstubAllGlobals());
+
   let queryClient: QueryClient;
 
   const mockDeletedTeams: DeletedTeam[] = [
@@ -643,25 +570,17 @@ describe("useDeletedTeams", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
 
-    global.fetch = vi.fn();
+    fetchStub.mockReset();
+    vi.stubGlobal("fetch", fetchStub);
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render", () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => ({ teams: mockDeletedTeams }),
     });
@@ -672,7 +591,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should return deleted teams data when query is successful", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => ({ teams: mockDeletedTeams }),
     });
@@ -692,7 +611,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should handle error when API call fails", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: false,
       json: async () => ({ error: "Failed to fetch deleted teams" }),
     });
@@ -711,16 +630,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useDeletedTeams(1, 10, {}), { wrapper });
 
@@ -731,7 +641,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should use placeholderData when paginating", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => ({ teams: mockDeletedTeams }),
     });
@@ -751,7 +661,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should pass options to API call", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => ({ teams: mockDeletedTeams }),
     });
@@ -768,7 +678,7 @@ describe("useDeletedTeams", () => {
       expect(global.fetch).toHaveBeenCalled();
     });
 
-    const callUrl = (global.fetch as any).mock.calls[0][0];
+    const callUrl = fetchStub.mock.calls[0][0];
     expect(callUrl).toContain("organization_id=org-1");
     expect(callUrl).toContain("team_id=team-1");
     expect(callUrl).toContain("user_id=user-1");
@@ -776,7 +686,7 @@ describe("useDeletedTeams", () => {
   });
 
   it("should handle response when data is directly an array (not wrapped in teams property)", async () => {
-    (global.fetch as any).mockResolvedValue({
+    fetchStub.mockResolvedValue({
       ok: true,
       json: async () => mockDeletedTeams, // Direct array, not wrapped in { teams: ... }
     });
@@ -800,16 +710,7 @@ describe("useAllTeams", () => {
   beforeEach(() => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     vi.clearAllMocks();
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
     fetchMock = vi.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
@@ -856,16 +757,7 @@ describe("useAllTeams", () => {
   });
 
   it("does not execute when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useAllTeams(), { wrapper });
 
@@ -881,16 +773,14 @@ describe("useAllTeams", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    mockUseAuthorized.mockReturnValue({
+    const otherUser = {
+      ...createAuthFixture(),
       accessToken: "a-different-users-token",
-      userId: "other-user-id",
-      userRole: "Admin",
       token: "a-different-users-token",
+      userId: "other-user-id",
       userEmail: "other@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    };
+    mockUseAuthorized.mockReturnValue(otherUser);
     rerender();
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));

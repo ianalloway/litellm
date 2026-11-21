@@ -1,3 +1,4 @@
+import { createAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,18 +7,10 @@ import { useKeys, useDeletedKeys } from "./useKeys";
 import type { KeyResponse } from "@/components/key_team_helpers/key_list";
 
 // Mock the networking utilities
-vi.mock("@/components/networking", () => ({
+vi.mock("@/components/networking", async () => ({
   getProxyBaseUrl: vi.fn().mockReturnValue(""),
   getGlobalLitellmHeaderName: vi.fn().mockReturnValue("Authorization"),
-  deriveErrorMessage: vi.fn((errorData: any) => {
-    return (
-      (errorData?.error && (errorData.error.message || errorData.error)) ||
-      errorData?.message ||
-      errorData?.detail ||
-      errorData?.error ||
-      JSON.stringify(errorData)
-    );
-  }),
+  deriveErrorMessage: (await import("@/lib/http/client")).deriveErrorMessage,
   handleError: vi.fn(),
 }));
 
@@ -40,6 +33,7 @@ const mockKeys: KeyResponse[] = [
   {
     token: "sk-test-key-1",
     token_id: "key-1",
+    key_type: null,
     key_name: "Test Key 1",
     key_alias: "test-key-1",
     spend: 10.5,
@@ -97,6 +91,7 @@ const mockKeys: KeyResponse[] = [
   {
     token: "sk-test-key-2",
     token_id: "key-2",
+    key_type: null,
     key_name: "Test Key 2",
     key_alias: "test-key-2",
     spend: 25.0,
@@ -176,16 +171,7 @@ describe("useKeys", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
 
     // Reset fetch mock
     mockFetch.mockClear();
@@ -267,16 +253,7 @@ describe("useKeys", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useKeys(1, 10), { wrapper });
 
@@ -536,16 +513,7 @@ describe("useDeletedKeys", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
 
     // Reset fetch mock
     mockFetch.mockClear();
@@ -647,16 +615,7 @@ describe("useDeletedKeys", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useDeletedKeys(1, 10), { wrapper });
 
