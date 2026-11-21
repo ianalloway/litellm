@@ -32,19 +32,24 @@ vi.mock("./networking", () => ({
   modelPatchUpdateCall: vi.fn(),
   modelDeleteCall: vi.fn(),
   credentialCreateCall: vi.fn(),
+  vectorStoreListCall: vi.fn().mockResolvedValue({ data: [] }),
 }));
 
 const mockUseModelsInfo = vi.fn();
 const mockUseModelHub = vi.fn();
 
 vi.mock("@/app/(dashboard)/hooks/models/useModels", () => ({
-  useModelsInfo: (...args: any[]) => mockUseModelsInfo(...args),
-  useModelHub: (...args: any[]) => mockUseModelHub(...args),
+  useModelsInfo: (...args: Parameters<typeof import("@/app/(dashboard)/hooks/models/useModels").useModelsInfo>) =>
+    mockUseModelsInfo(...args),
+  useModelHub: (...args: Parameters<typeof import("@/app/(dashboard)/hooks/models/useModels").useModelHub>) =>
+    mockUseModelHub(...args),
 }));
 
 const mockUseModelCostMap = vi.fn();
 vi.mock("@/app/(dashboard)/hooks/models/useModelCostMap", () => ({
-  useModelCostMap: (...args: any[]) => mockUseModelCostMap(...args),
+  useModelCostMap: (
+    ...args: Parameters<typeof import("@/app/(dashboard)/hooks/models/useModelCostMap").useModelCostMap>
+  ) => mockUseModelCostMap(...args),
 }));
 
 const mockNotificationsManager = vi.mocked(NotificationsManager);

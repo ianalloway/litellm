@@ -7,7 +7,8 @@ import AllModelsTab from "./AllModelsTab";
 // Mock modelDeleteCall
 const mockModelDeleteCall = vi.fn().mockResolvedValue({});
 vi.mock("@/components/networking", () => ({
-  modelDeleteCall: (...args: any[]) => mockModelDeleteCall(...args),
+  modelDeleteCall: (...args: Parameters<typeof import("@/components/networking").modelDeleteCall>) =>
+    mockModelDeleteCall(...args),
 }));
 
 // Mock NotificationsManager
@@ -112,6 +113,8 @@ describe("AllModelsTab", () => {
   };
 
   const mockUseAuthorized = {
+    isLoading: false,
+    isAuthorized: true,
     token: "mock-token",
     accessToken: "mock-access-token",
     userId: "user-123",

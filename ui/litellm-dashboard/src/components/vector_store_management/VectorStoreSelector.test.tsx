@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VectorStore } from "./types";
@@ -7,19 +8,28 @@ import VectorStoreSelector from "./VectorStoreSelector";
 const mockVectorStoreListCall = vi.fn();
 
 vi.mock("../networking", () => ({
-  vectorStoreListCall: (...args: any[]) => mockVectorStoreListCall(...args),
+  vectorStoreListCall: (...args: Parameters<typeof import("../networking").vectorStoreListCall>) =>
+    mockVectorStoreListCall(...args),
 }));
 
-// Mock antd Select component
-vi.mock("antd", () => ({
-  Select: vi.fn(),
-}));
+type SelectFixtureProps = {
+  onChange?: (values: string[]) => void;
+  value?: string[];
+  placeholder?: string;
+  loading?: boolean;
+  className?: string;
+  disabled?: boolean;
+  options?: { label: string; value: string; title: string }[];
+  mode?: "multiple";
+  showSearch?: boolean;
+  optionFilterProp?: string;
+  style?: CSSProperties;
+};
 
-// Import the mocked Select
-import { Select as MockedSelect } from "antd";
+const selectFixture = vi.hoisted(() => vi.fn<(props: SelectFixtureProps) => ReactNode>());
+vi.mock("antd", () => ({ Select: selectFixture }));
 
-// Configure the mock to render a simple div with data attributes
-(MockedSelect as any).mockImplementation((props: any) => {
+selectFixture.mockImplementation((props) => {
   const {
     onChange,
     value,
@@ -47,19 +57,22 @@ import { Select as MockedSelect } from "antd";
       data-options={JSON.stringify(options)}
       className={className}
       style={style}
-      onClick={(e: any) => {
+      onClick={(event) => {
         // For testing purposes, allow simulating different selection behaviors
         // The test can control this by setting data attributes on the element
-        const testSelection = e.target.getAttribute("data-test-selection");
+        const testSelection = event.target instanceof Element ? event.target.getAttribute("data-test-selection") : null;
         if (testSelection && onChange) {
-          onChange(JSON.parse(testSelection));
-        } else if (onChange && options?.length > 0) {
+          const selected: unknown = JSON.parse(testSelection);
+          if (Array.isArray(selected) && selected.every((value) => typeof value === "string")) {
+            onChange(selected);
+          }
+        } else if (onChange && options && options.length > 0) {
           // Default behavior: select first option
           onChange([options[0].value]);
         }
       }}
     >
-      {options?.map((opt: any) => (
+      {options?.map((opt) => (
         <div
           key={opt.value}
           data-option-value={opt.value}
@@ -228,17 +241,14 @@ describe("VectorStoreSelector", () => {
     });
 
     it("should set loading state while fetching", async () => {
-      let resolvePromise: (value: any) => void;
-      const promise = new Promise((resolve) => {
-        resolvePromise = resolve;
-      });
-      mockVectorStoreListCall.mockReturnValue(promise);
+      const response = Promise.withResolvers<{ data: VectorStore[] }>();
+      mockVectorStoreListCall.mockReturnValue(response.promise);
 
       renderComponent();
       const select = getSelectElement();
       expect(select).toHaveAttribute("data-loading", "true");
 
-      resolvePromise!({ data: mockVectorStores });
+      response.resolve({ data: mockVectorStores });
       await waitFor(() => {
         expect(select).toHaveAttribute("data-loading", "false");
       });
