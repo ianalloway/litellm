@@ -13,10 +13,6 @@ export async function makeOpenAIImageEditsRequest(
   customBaseUrl?: string,
 ) {
   // base url should be the current base_url
-  const isLocal = process.env.NODE_ENV === "development";
-  if (isLocal !== true) {
-    console.log = function () {};
-  }
   const proxyBaseUrl = customBaseUrl || getProxyBaseUrl();
 
   const client = new openai.OpenAI({

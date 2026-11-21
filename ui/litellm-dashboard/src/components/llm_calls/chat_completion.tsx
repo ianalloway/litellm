@@ -33,10 +33,6 @@ export async function makeOpenAIChatCompletionRequest(
   mcpToolsets?: MCPToolset[],
 ) {
   // base url should be the current base_url
-  const isLocal = process.env.NODE_ENV === "development";
-  if (isLocal !== true) {
-    console.log = function () {};
-  }
   const proxyBaseUrl = customBaseUrl || getProxyBaseUrl();
   // Prepare headers with tags and trace ID
   const headers: Record<string, string> = {};

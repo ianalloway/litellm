@@ -17,8 +17,7 @@ import ViewSwitcher from "@/components/Navbar/ViewSwitcher";
 import WorkerDropdown from "@/components/Navbar/WorkerDropdown/WorkerDropdown";
 import { useWorker } from "@/hooks/useWorker";
 import { useDisableShowPrompts } from "@/app/(dashboard)/hooks/useDisableShowPrompts";
-import { clearTokenCookies } from "@/utils/cookieUtils";
-import { clearStoredReturnUrl, getLoginUrl } from "@/utils/returnUrlUtils";
+import { switchWorker } from "@/utils/switchWorker";
 
 interface DashboardHeaderProps {
   page: string;
@@ -31,14 +30,6 @@ export function DashboardHeader({ page }: DashboardHeaderProps) {
   const { isControlPlane, selectedWorker } = useWorker();
   const showWorkerSwitch = isControlPlane && selectedWorker !== null;
   const hideCommunityLinks = useDisableShowPrompts();
-
-  const handleWorkerSwitch = (workerId: string) => {
-    clearTokenCookies();
-    clearStoredReturnUrl();
-    localStorage.removeItem("litellm_selected_worker_id");
-    localStorage.removeItem("litellm_worker_url");
-    window.location.href = `${getLoginUrl()}?worker=${encodeURIComponent(workerId)}`;
-  };
 
   return (
     <header className="flex h-14 flex-none items-center justify-between gap-4 border-b border-border bg-background px-4">
@@ -57,7 +48,7 @@ export function DashboardHeader({ page }: DashboardHeaderProps) {
       <div className="flex flex-none items-center gap-1">
         {showWorkerSwitch && (
           <>
-            <WorkerDropdown onWorkerSwitch={handleWorkerSwitch} />
+            <WorkerDropdown onWorkerSwitch={switchWorker} />
             <Separator orientation="vertical" className="mx-1.5 h-5" />
           </>
         )}

@@ -25,11 +25,6 @@ export async function makeAnthropicMessagesRequest(
     throw new Error("Virtual Key is required");
   }
 
-  const isLocal = process.env.NODE_ENV === "development";
-  if (isLocal !== true) {
-    console.log = function () {};
-  }
-
   const proxyBaseUrl = customBaseUrl || getProxyBaseUrl();
 
   // Prepare headers with tags and trace ID

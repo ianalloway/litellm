@@ -80,9 +80,6 @@ const _initialWorkerUrl = (() => {
   return null;
 })();
 export let proxyBaseUrl: string | null = _initialWorkerUrl ?? defaultProxyBaseUrl;
-if (isLocal != true) {
-  console.log = function () {};
-}
 
 const getWindowLocation = () => {
   if (typeof window === "undefined") {
