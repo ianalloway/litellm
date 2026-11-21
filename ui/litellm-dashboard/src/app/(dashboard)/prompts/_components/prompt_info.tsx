@@ -71,7 +71,8 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
       // Set environments from response
       if (response.environments && response.environments.length > 0) {
         setEnvironments(response.environments);
-        setSelectedEnv((current) => current || response.prompt_spec.environment || response.environments[0]);
+        const defaultEnvironment = response.prompt_spec.environment || response.environments[0];
+        setSelectedEnv((current) => current || defaultEnvironment);
       }
       setSelectedVersion(response.prompt_spec.version || null);
     } catch (error) {
