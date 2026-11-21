@@ -39,8 +39,11 @@ const CodeInterpreterOutput: React.FC<CodeInterpreterOutputProps> = ({
 
   // Fetch images from container files API
   useEffect(() => {
+    const controller = new AbortController();
+    const urls: string[] = [];
     const fetchImages = async () => {
       for (const annotation of annotations) {
+        if (controller.signal.aborted) return;
         const isImage =
           annotation.filename?.toLowerCase().endsWith(".png") ||
           annotation.filename?.toLowerCase().endsWith(".jpg") ||
@@ -55,6 +58,7 @@ const CodeInterpreterOutput: React.FC<CodeInterpreterOutputProps> = ({
             const response = await fetch(
               `${proxyBaseUrl}/v1/containers/${annotation.container_id}/files/${annotation.file_id}/content`,
               {
+                signal: controller.signal,
                 headers: {
                   [getGlobalLitellmHeaderName()]: `Bearer ${accessToken}`,
                 },
@@ -63,13 +67,17 @@ const CodeInterpreterOutput: React.FC<CodeInterpreterOutputProps> = ({
 
             if (response.ok) {
               const blob = await response.blob();
+              if (controller.signal.aborted) return;
               const url = URL.createObjectURL(blob);
+              urls.push(url);
               setImageUrls((prev) => ({ ...prev, [annotation.file_id]: url }));
             }
           } catch (error) {
-            console.error("Error fetching image:", error);
+            if (!controller.signal.aborted) console.error("Error fetching image:", error);
           } finally {
-            setLoadingImages((prev) => ({ ...prev, [annotation.file_id]: false }));
+            if (!controller.signal.aborted) {
+              setLoadingImages((prev) => ({ ...prev, [annotation.file_id]: false }));
+            }
           }
         }
       }
@@ -81,7 +89,8 @@ const CodeInterpreterOutput: React.FC<CodeInterpreterOutputProps> = ({
 
     // Cleanup URLs on unmount
     return () => {
-      Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
+      controller.abort();
+      urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [annotations, accessToken, proxyBaseUrl]);
 

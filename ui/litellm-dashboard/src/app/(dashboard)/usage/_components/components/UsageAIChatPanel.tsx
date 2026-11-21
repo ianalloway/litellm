@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Select, Input, Spin } from "antd";
 import ReactMarkdown from "react-markdown";
 import { modelHubCall, usageAiChatStream, UsageAiToolCallEvent } from "@/components/networking";
@@ -109,11 +109,6 @@ const UsageAIChatPanel: React.FC<UsageAIChatPanelProps> = ({ open, onClose, acce
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (open && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [open]);
 
   useEffect(() => {
     if (typeof messagesEndRef.current?.scrollIntoView === "function") {
@@ -121,7 +116,7 @@ const UsageAIChatPanel: React.FC<UsageAIChatPanelProps> = ({ open, onClose, acce
     }
   }, [messages, streamingContent, activeToolCalls, statusMessage]);
 
-  const loadModels = async () => {
+  const loadModels = useCallback(async () => {
     if (!accessToken) return;
     setIsLoadingModels(true);
     try {
@@ -135,7 +130,13 @@ const UsageAIChatPanel: React.FC<UsageAIChatPanelProps> = ({ open, onClose, acce
     } finally {
       setIsLoadingModels(false);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (open && availableModels.length === 0) {
+      loadModels();
+    }
+  }, [availableModels.length, loadModels, open]);
 
   const handleSend = async () => {
     if (!accessToken || !inputText.trim() || isLoading) return;

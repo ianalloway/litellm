@@ -1354,13 +1354,7 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({
     setPolicyName(editingPolicy?.policy_name || "");
     setDescription(editingPolicy?.description || "");
     setPipeline(derivePipelineFromPolicy(editingPolicy));
-  }, [
-    editingPolicy?.policy_id,
-    editingPolicy?.policy_name,
-    editingPolicy?.description,
-    editingPolicy?.pipeline,
-    editingPolicy?.guardrails_add,
-  ]);
+  }, [editingPolicy]);
 
   // Fetch versions when editing an existing policy by name
   React.useEffect(() => {

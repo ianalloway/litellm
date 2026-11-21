@@ -57,7 +57,7 @@ const EditHashicorpVaultModal: React.FC<EditHashicorpVaultModalProps> = ({ isVis
       form.resetFields();
       // Only set non-sensitive fields — sensitive ones show as placeholders
       const formValues: Record<string, any> = {};
-      for (const [key, value] of Object.entries(rawValues)) {
+      for (const [key, value] of Object.entries(data.values ?? {})) {
         if (!SENSITIVE_FIELDS.has(key)) {
           formValues[key] = value;
         }

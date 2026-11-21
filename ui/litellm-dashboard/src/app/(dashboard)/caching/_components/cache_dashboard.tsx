@@ -118,19 +118,21 @@ const CacheDashboard: React.FC<CachePageProps> = ({ accessToken, token, userRole
     if (!accessToken || !dateValue) {
       return;
     }
+    let active = true;
     const fetchData = async () => {
       const response = await adminGlobalCacheActivity(
         accessToken,
         formatDateWithoutTZ(dateValue.from),
         formatDateWithoutTZ(dateValue.to),
       );
-      setData(response);
+      if (active) setData(response);
     };
     fetchData();
 
     const currentDate = new Date();
     setLastRefreshed(currentDate.toLocaleString());
-  }, [accessToken]);
+    return () => { active = false; };
+  }, [accessToken, dateValue]);
 
   const uniqueApiKeys = Array.from(new Set(data.map((item) => item?.api_key ?? "")));
   const uniqueModels = Array.from(new Set(data.map((item) => item?.model ?? "")));

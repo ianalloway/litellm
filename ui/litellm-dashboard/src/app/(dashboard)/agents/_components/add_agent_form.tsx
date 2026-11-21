@@ -111,7 +111,7 @@ const AddAgentForm: React.FC<AddAgentFormProps> = ({ visible, onClose, accessTok
       };
       fetchKeys();
     }
-  }, [currentStep, accessToken]);
+  }, [currentStep, accessToken, existingKeys.length]);
 
   // Fetch available models when Agent Management step is active (same list as key generation)
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Text, Button, Callout, TextInput } from "@tremor/react";
 import { Modal, Form, Spin, Select } from "antd";
 import { getGlobalLitellmHeaderName } from "@/components/networking";
@@ -32,13 +32,8 @@ const CloudZeroExportModal: React.FC<CloudZeroExportModalProps> = ({ isOpen, onC
   const [exportLoading, setExportLoading] = useState(false);
 
   // Load existing settings when modal opens
-  useEffect(() => {
-    if (isOpen && accessToken) {
-      loadExistingSettings();
-    }
-  }, [isOpen, accessToken]);
 
-  const loadExistingSettings = async () => {
+  const loadExistingSettings = useCallback(async () => {
     setSettingsLoading(true);
     try {
       const response = await fetch("/cloudzero/settings", {
@@ -67,7 +62,13 @@ const CloudZeroExportModal: React.FC<CloudZeroExportModalProps> = ({ isOpen, onC
     } finally {
       setSettingsLoading(false);
     }
-  };
+  }, [accessToken, form]);
+
+  useEffect(() => {
+    if (isOpen && accessToken) {
+      loadExistingSettings();
+    }
+  }, [isOpen, accessToken, loadExistingSettings]);
 
   const handleSaveCloudZeroSettings = async (values: CloudZeroSettings) => {
     if (!accessToken) {

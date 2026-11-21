@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Icon,
   Button as TremorButton,
@@ -46,7 +46,7 @@ const VectorStoreManagement: React.FC<VectorStoreProps> = ({ accessToken, userID
   const [editVectorStore, setEditVectorStore] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchVectorStores = async () => {
+  const fetchVectorStores = useCallback(async () => {
     if (!accessToken) {
       setIsLoadingVectorStores(false);
       return;
@@ -60,9 +60,9 @@ const VectorStoreManagement: React.FC<VectorStoreProps> = ({ accessToken, userID
     } finally {
       setIsLoadingVectorStores(false);
     }
-  };
+  }, [accessToken]);
 
-  const fetchCredentials = async () => {
+  const fetchCredentials = useCallback(async () => {
     if (!accessToken) return;
     try {
       const response = await credentialListCall(accessToken);
@@ -71,7 +71,7 @@ const VectorStoreManagement: React.FC<VectorStoreProps> = ({ accessToken, userID
       console.error("Error fetching credentials:", error);
       NotificationsManager.fromBackend("Error fetching credentials: " + error);
     }
-  };
+  }, [accessToken]);
 
   const handleRefreshClick = () => {
     fetchVectorStores();
@@ -131,7 +131,7 @@ const VectorStoreManagement: React.FC<VectorStoreProps> = ({ accessToken, userID
   useEffect(() => {
     fetchVectorStores();
     fetchCredentials();
-  }, [accessToken]);
+  }, [accessToken, fetchCredentials, fetchVectorStores]);
 
   return selectedVectorStoreId ? (
     <div className="w-full h-full">

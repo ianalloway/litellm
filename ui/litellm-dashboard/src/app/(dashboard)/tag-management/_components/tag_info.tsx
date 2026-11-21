@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Card,
   Text,
@@ -48,7 +48,7 @@ const TagInfoView: React.FC<TagInfoViewProps> = ({ tagId, onClose, accessToken, 
     }
   };
 
-  const fetchTagDetails = async () => {
+  const fetchTagDetails = useCallback(async () => {
     if (!accessToken) return;
     try {
       const response = await tagInfoCall(accessToken, [tagId]);
@@ -69,11 +69,11 @@ const TagInfoView: React.FC<TagInfoViewProps> = ({ tagId, onClose, accessToken, 
       console.error("Error fetching tag details:", error);
       NotificationsManager.fromBackend("Error fetching tag details: " + error);
     }
-  };
+  }, [accessToken, editTag, form, tagId]);
 
   useEffect(() => {
     fetchTagDetails();
-  }, [tagId, accessToken]);
+  }, [tagId, accessToken, fetchTagDetails]);
 
   useEffect(() => {
     if (accessToken) {

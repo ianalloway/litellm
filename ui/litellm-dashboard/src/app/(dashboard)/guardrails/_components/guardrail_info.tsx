@@ -50,6 +50,13 @@ interface ProviderParamsResponse {
   [provider: string]: { [key: string]: ProviderParam };
 }
 
+const emptyToolPermissionConfig: ToolPermissionConfig = {
+  rules: [],
+  default_action: "deny",
+  on_disallowed_action: "block",
+  violation_message_template: "",
+};
+
 const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose, accessToken, isAdmin }) => {
   const [guardrailData, setGuardrailData] = useState<any>(null);
   const [guardrailProviderSpecificParams, setGuardrailProviderSpecificParams] = useState<any>(null);
@@ -85,12 +92,6 @@ const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose,
   } | null>(null);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [hasUnsavedContentFilterChanges, setHasUnsavedContentFilterChanges] = useState(false);
-  const emptyToolPermissionConfig: ToolPermissionConfig = {
-    rules: [],
-    default_action: "deny",
-    on_disallowed_action: "block",
-    violation_message_template: "",
-  };
   const [toolPermissionConfig, setToolPermissionConfig] = useState<ToolPermissionConfig>(emptyToolPermissionConfig);
   const [toolPermissionDirty, setToolPermissionDirty] = useState(false);
   const [customCodeModalVisible, setCustomCodeModalVisible] = useState(false);
@@ -128,7 +129,7 @@ const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose,
     [],
   );
 
-  const fetchGuardrailInfo = async () => {
+  const fetchGuardrailInfo = useCallback(async () => {
     try {
       setLoading(true);
       if (!accessToken) return;
@@ -167,9 +168,9 @@ const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose,
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, guardrailId]);
 
-  const fetchGuardrailProviderSpecificParams = async () => {
+  const fetchGuardrailProviderSpecificParams = useCallback(async () => {
     try {
       if (!accessToken) return;
       const response = await getGuardrailProviderSpecificParams(accessToken);
@@ -177,9 +178,9 @@ const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose,
     } catch (error) {
       console.error("Error fetching guardrail provider specific params:", error);
     }
-  };
+  }, [accessToken]);
 
-  const fetchGuardrailUISettings = async () => {
+  const fetchGuardrailUISettings = useCallback(async () => {
     try {
       if (!accessToken) return;
       const uiSettings = await getGuardrailUISettings(accessToken);
@@ -187,16 +188,16 @@ const GuardrailInfoView: React.FC<GuardrailInfoProps> = ({ guardrailId, onClose,
     } catch (error) {
       console.error("Error fetching guardrail UI settings:", error);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchGuardrailProviderSpecificParams();
-  }, [accessToken]);
+  }, [accessToken, fetchGuardrailProviderSpecificParams]);
 
   useEffect(() => {
     fetchGuardrailInfo();
     fetchGuardrailUISettings();
-  }, [guardrailId, accessToken]);
+  }, [guardrailId, accessToken, fetchGuardrailInfo, fetchGuardrailUISettings]);
 
   // Reset form when guardrail data or provider params change
   useEffect(() => {

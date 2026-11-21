@@ -7,7 +7,7 @@ import { InfoCircleOutlined } from "@ant-design/icons";
 import { Accordion, AccordionBody, AccordionHeader, TextInput } from "@tremor/react";
 import { Button, Form, Input, Layout, Modal, Select, Switch, Tabs, theme, Tooltip, Typography } from "antd";
 import { Plus, Users } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button as UIButton } from "@/components/ui/button";
@@ -160,7 +160,7 @@ const Teams: React.FC<TeamProps> = ({ accessToken, userID, userRole, premiumUser
     const models = getOrganizationModels(currentOrgForCreateTeam, userModels);
     setModelsToPick(models);
     form.setFieldValue("models", []);
-  }, [currentOrgForCreateTeam, userModels]);
+  }, [currentOrgForCreateTeam, form, userModels]);
 
   // Handle organization preselection when modal opens
   useEffect(() => {
@@ -179,7 +179,7 @@ const Teams: React.FC<TeamProps> = ({ accessToken, userID, userRole, premiumUser
         setCurrentOrgForCreateTeam(currentOrg);
       }
     }
-  }, [isTeamModalVisible, userRole, userID, organizations, currentOrg]);
+  }, [isTeamModalVisible, userRole, userID, organizations, currentOrg, form]);
 
   // Add this useEffect to fetch guardrails
   useEffect(() => {
@@ -215,7 +215,7 @@ const Teams: React.FC<TeamProps> = ({ accessToken, userID, userRole, premiumUser
     fetchPolicies();
   }, [accessToken]);
 
-  const fetchMcpAccessGroups = async () => {
+  const fetchMcpAccessGroups = useCallback(async () => {
     try {
       if (accessToken == null) {
         return;
@@ -225,11 +225,11 @@ const Teams: React.FC<TeamProps> = ({ accessToken, userID, userRole, premiumUser
     } catch (error) {
       console.error("Failed to fetch MCP access groups:", error);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchMcpAccessGroups();
-  }, [accessToken]);
+  }, [accessToken, fetchMcpAccessGroups]);
 
   const handleOk = () => {
     setIsTeamModalVisible(false);

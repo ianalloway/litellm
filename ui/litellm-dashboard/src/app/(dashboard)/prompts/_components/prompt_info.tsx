@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import {
   Card,
   Title,
@@ -59,7 +59,7 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
   const [loadingVersions, setLoadingVersions] = useState(false);
 
   // Initial fetch — no environment filter, gets default + all environments list
-  const fetchPromptInfo = async (environment?: string) => {
+  const fetchPromptInfo = useCallback(async (environment?: string) => {
     try {
       setLoading(true);
       if (!accessToken) return;
@@ -71,9 +71,7 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
       // Set environments from response
       if (response.environments && response.environments.length > 0) {
         setEnvironments(response.environments);
-        if (!selectedEnv) {
-          setSelectedEnv(response.prompt_spec.environment || response.environments[0]);
-        }
+        setSelectedEnv((current) => current || response.prompt_spec.environment || response.environments[0]);
       }
       setSelectedVersion(response.prompt_spec.version || null);
     } catch (error) {
@@ -82,10 +80,10 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, promptId]);
 
   // Fetch version history for selected environment
-  const fetchVersionHistory = async (env: string) => {
+  const fetchVersionHistory = useCallback(async (env: string) => {
     if (!accessToken) return;
     setLoadingVersions(true);
     try {
@@ -96,7 +94,7 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
     } finally {
       setLoadingVersions(false);
     }
-  };
+  }, [accessToken, promptId]);
 
   const isInitialMount = useRef(true);
 
@@ -105,7 +103,7 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
     setEnvironments([]);
     setVersionHistory([]);
     fetchPromptInfo();
-  }, [promptId, accessToken]);
+  }, [promptId, accessToken, fetchPromptInfo]);
 
   // When environment changes (user clicks tab), re-fetch — skip initial mount
   useEffect(() => {
@@ -121,7 +119,7 @@ const PromptInfoView: React.FC<PromptInfoProps> = ({ promptId, onClose, accessTo
       fetchPromptInfo(selectedEnv);
       fetchVersionHistory(selectedEnv);
     }
-  }, [selectedEnv]);
+  }, [accessToken, fetchPromptInfo, fetchVersionHistory, selectedEnv]);
 
   if (loading && !promptData) {
     return <div className="p-4">Loading...</div>;

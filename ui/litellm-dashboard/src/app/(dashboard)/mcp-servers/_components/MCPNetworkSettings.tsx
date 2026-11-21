@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Select, Button, Card, Typography, Spin, Tag } from "antd";
 import { SaveOutlined, PlusOutlined } from "@ant-design/icons";
 import { DeprecationBanner } from "@/components/DeprecationBanner";
@@ -30,12 +30,8 @@ const MCPNetworkSettings: React.FC<MCPNetworkSettingsProps> = ({ accessToken }) 
   const [privateRanges, setPrivateRanges] = useState<string[]>([]);
   const [currentIp, setCurrentIp] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadSettings();
-    detectCurrentIp();
-  }, [accessToken]);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     try {
@@ -50,15 +46,20 @@ const MCPNetworkSettings: React.FC<MCPNetworkSettingsProps> = ({ accessToken }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
 
-  const detectCurrentIp = async () => {
+  const detectCurrentIp = useCallback(async () => {
     if (!accessToken) return;
     const ip = await fetchMCPClientIp(accessToken);
     if (ip) {
       setCurrentIp(ip);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    loadSettings();
+    detectCurrentIp();
+  }, [accessToken, detectCurrentIp, loadSettings]);
 
   const handleSave = async () => {
     if (!accessToken) return;

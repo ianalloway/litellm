@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Card, Text, Title, Button, Badge, TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { Form, Input, Select as Select2, Tooltip, Button as AntButton } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
@@ -37,7 +37,7 @@ const VectorStoreInfoView: React.FC<VectorStoreInfoViewProps> = ({
   const [credentials, setCredentials] = useState<CredentialItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>(editVectorStore ? "details" : "details");
 
-  const fetchVectorStoreDetails = async () => {
+  const fetchVectorStoreDetails = useCallback(async () => {
     if (!accessToken) return;
     try {
       const response = await vectorStoreInfoCall(accessToken, vectorStoreId);
@@ -66,9 +66,9 @@ const VectorStoreInfoView: React.FC<VectorStoreInfoViewProps> = ({
       console.error("Error fetching vector store details:", error);
       NotificationsManager.fromBackend("Error fetching vector store details: " + error);
     }
-  };
+  }, [accessToken, editVectorStore, form, vectorStoreId]);
 
-  const fetchCredentials = async () => {
+  const fetchCredentials = useCallback(async () => {
     if (!accessToken) return;
     try {
       const response = await credentialListCall(accessToken);
@@ -76,12 +76,12 @@ const VectorStoreInfoView: React.FC<VectorStoreInfoViewProps> = ({
     } catch (error) {
       console.error("Error fetching credentials:", error);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchVectorStoreDetails();
     fetchCredentials();
-  }, [vectorStoreId, accessToken]);
+  }, [vectorStoreId, accessToken, fetchVectorStoreDetails, fetchCredentials]);
 
   const handleSave = async (values: any) => {
     if (!accessToken) return;

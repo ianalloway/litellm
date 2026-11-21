@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Form, Input, InputNumber, Select } from "antd";
 import { TextInput } from "@tremor/react";
 import { InfoCircleOutlined } from "@ant-design/icons";
@@ -105,6 +105,8 @@ const SchemaFormFields: React.FC<SchemaFormFieldsProps> = ({
   customValidation = {},
   defaultValues = {},
 }) => {
+  const initialValues = useRef(defaultValues);
+  useEffect(() => { initialValues.current = defaultValues; }, [defaultValues]);
   const [schemaProperties, setSchemaProperties] = useState<OpenAPISchema | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,9 +124,9 @@ const SchemaFormFields: React.FC<SchemaFormFieldsProps> = ({
 
         const defaultFormValues: { [key: string]: any } = {};
         Object.keys(componentSchema.properties)
-          .filter((key) => !excludedFields.includes(key) && defaultValues[key] !== undefined)
+          .filter((key) => !excludedFields.includes(key) && initialValues.current[key] !== undefined)
           .forEach((key) => {
-            defaultFormValues[key] = defaultValues[key];
+            defaultFormValues[key] = initialValues.current[key];
           });
 
         form.setFieldsValue(defaultFormValues);

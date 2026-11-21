@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { Card, Title, Text, Button as TremorButton, Tab, TabGroup, TabList, TabPanel, TabPanels } from "@tremor/react";
 import { Form, Input, InputNumber, Button as AntButton, Spin, Descriptions, Divider } from "antd";
 import MessageManager from "@/components/molecules/message_manager";
@@ -51,11 +51,8 @@ const AgentInfoView: React.FC<AgentInfoViewProps> = ({ agentId, onClose, accessT
     fetchMetadata();
   }, []);
 
-  useEffect(() => {
-    fetchAgentInfo();
-  }, [agentId, accessToken]);
 
-  const fetchAgentInfo = async () => {
+  const fetchAgentInfo = useCallback(async () => {
     if (!accessToken) return;
 
     setIsLoading(true);
@@ -84,7 +81,11 @@ const AgentInfoView: React.FC<AgentInfoViewProps> = ({ agentId, onClose, accessT
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, agentId, agentTypeMetadata, form]);
+
+  useEffect(() => {
+    fetchAgentInfo();
+  }, [agentId, accessToken, fetchAgentInfo]);
 
   // Re-parse form when metadata is loaded
   useEffect(() => {
@@ -97,7 +98,7 @@ const AgentInfoView: React.FC<AgentInfoViewProps> = ({ agentId, onClose, accessT
         }
       }
     }
-  }, [agentTypeMetadata, agent]);
+  }, [agentTypeMetadata, agent, form]);
 
   const selectedAgentTypeInfo = agentTypeMetadata.find((t) => t.agent_type === detectedAgentType);
   const watchedFormValues = Form.useWatch([], form);

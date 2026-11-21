@@ -20,7 +20,7 @@ import {
 import { Button, Form, Input, Modal, Select, Tooltip } from "antd";
 import VectorStoreSelector from "./vector_store_management/VectorStoreSelector";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { copyToClipboard as utilCopyToClipboard } from "../utils/dataUtils";
 import { formItemValidateJSON, truncateString } from "../utils/textUtils";
 import AutoRouterConnectionTest from "./add_model/auto_router_connection_test";
@@ -166,14 +166,14 @@ export default function ModelInfoView({
   const { data: modelHubData } = useModelHub();
 
   // Transform the model data
-  const getProviderFromModel = (model: string) => {
+  const getProviderFromModel = useCallback((model: string) => {
     if (modelCostMapData !== null && modelCostMapData !== undefined) {
       if (typeof modelCostMapData == "object" && model in modelCostMapData) {
         return modelCostMapData[model]["litellm_provider"];
       }
     }
     return "openai";
-  };
+  }, [modelCostMapData]);
 
   const transformedModelData = useMemo(() => {
     if (!rawModelDataResponse?.data || rawModelDataResponse.data.length === 0) {
@@ -181,7 +181,7 @@ export default function ModelInfoView({
     }
     const transformed = transformModelData(rawModelDataResponse, getProviderFromModel);
     return transformed.data[0] || null;
-  }, [rawModelDataResponse, modelCostMapData]);
+  }, [rawModelDataResponse, getProviderFromModel]);
 
   // Keep modelData variable name for backwards compatibility
   const modelData = transformedModelData;
@@ -225,6 +225,43 @@ export default function ModelInfoView({
   }, [modelData, localModelData]);
 
   useEffect(() => {
+    const fetchGuardrails = async () => {
+      if (!accessToken) return;
+      try {
+        const response = await getGuardrailsList(accessToken);
+        const guardrailNames = response.guardrails.map((g: { guardrail_name: string }) => g.guardrail_name);
+        setGuardrailsList(guardrailNames);
+      } catch (error) {
+        console.error("Failed to fetch guardrails:", error);
+      }
+    };
+
+    const fetchTags = async () => {
+      if (!accessToken) return;
+      try {
+        const response = await tagListCall(accessToken);
+        setTagsList(response);
+      } catch (error) {
+        console.error("Failed to fetch tags:", error);
+      }
+    };
+
+    const fetchCredentials = async () => {
+      if (!accessToken) return;
+      try {
+        const response = await credentialListCall(accessToken);
+        setCredentialsList(response.credentials || []);
+      } catch (error) {
+        console.error("Failed to fetch credentials:", error);
+      }
+    };
+
+    fetchGuardrails();
+    fetchTags();
+    fetchCredentials();
+  }, [accessToken, modelId]);
+
+  useEffect(() => {
     const getExistingCredential = async () => {
       if (!accessToken) return;
       if (usingExistingCredential) return;
@@ -260,43 +297,9 @@ export default function ModelInfoView({
       }
     };
 
-    const fetchGuardrails = async () => {
-      if (!accessToken) return;
-      try {
-        const response = await getGuardrailsList(accessToken);
-        const guardrailNames = response.guardrails.map((g: { guardrail_name: string }) => g.guardrail_name);
-        setGuardrailsList(guardrailNames);
-      } catch (error) {
-        console.error("Failed to fetch guardrails:", error);
-      }
-    };
-
-    const fetchTags = async () => {
-      if (!accessToken) return;
-      try {
-        const response = await tagListCall(accessToken);
-        setTagsList(response);
-      } catch (error) {
-        console.error("Failed to fetch tags:", error);
-      }
-    };
-
-    const fetchCredentials = async () => {
-      if (!accessToken) return;
-      try {
-        const response = await credentialListCall(accessToken);
-        setCredentialsList(response.credentials || []);
-      } catch (error) {
-        console.error("Failed to fetch credentials:", error);
-      }
-    };
-
     getExistingCredential();
     getModelInfo();
-    fetchGuardrails();
-    fetchTags();
-    fetchCredentials();
-  }, [accessToken, modelId]);
+  }, [accessToken, modelId, modelData, usingExistingCredential]);
 
   const handleReuseCredential = async (values: any) => {
     if (!accessToken) return;

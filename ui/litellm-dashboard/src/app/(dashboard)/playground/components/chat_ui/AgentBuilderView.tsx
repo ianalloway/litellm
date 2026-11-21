@@ -220,9 +220,11 @@ export default function AgentBuilderView({
     try {
       const list = await fetchAvailableAgentModels(accessToken, userID, userRole);
       setAgentModels(list);
-      if (!selectedId || (selectedId !== NEW_AGENT_ID && !list.some((a) => getAgentSelectionKey(a) === selectedId))) {
-        setSelectedId(list.length > 0 ? getAgentSelectionKey(list[0]) : null);
-      }
+      setSelectedId((id) =>
+        id === NEW_AGENT_ID || list.some((a) => getAgentSelectionKey(a) === id)
+          ? id
+          : list.length > 0 ? getAgentSelectionKey(list[0]) : null,
+      );
       return list;
     } catch (e) {
       console.error(e);
@@ -238,8 +240,8 @@ export default function AgentBuilderView({
     try {
       const models = await fetchAvailableModels(effectiveApiKey);
       setModelGroups(models);
-      if (!draftUnderlyingModel && models.length > 0) {
-        setDraftUnderlyingModel(models[0].model_group);
+      if (models.length > 0) {
+        setDraftUnderlyingModel((model) => model || models[0].model_group);
       }
     } catch (e) {
       console.error(e);
@@ -282,7 +284,7 @@ export default function AgentBuilderView({
       setDraftName(selectedAgent.model_name);
       setDraftSystemPrompt(selectedAgent.litellm_params?.litellm_system_prompt ?? "");
       const underlying = parseUnderlyingModel(selectedAgent.litellm_params?.model);
-      setDraftUnderlyingModel(underlying ?? modelGroups[0]?.model_group);
+      setDraftUnderlyingModel(underlying);
       const p = selectedAgent.litellm_params as { temperature?: number; max_tokens?: number } | undefined;
       setDraftTemperature(typeof p?.temperature === "number" ? p.temperature : 0.7);
       setDraftMaxTokens(typeof p?.max_tokens === "number" ? p.max_tokens : 4096);
@@ -298,7 +300,12 @@ export default function AgentBuilderView({
         : [];
       setDraftTools(tools);
     }
-  }, [selectedId, isNewAgent, selectedAgent?.model_name, selectedAgent?.litellm_params?.tools]);
+  }, [selectedAgent, isNewAgent]);
+
+  // Fill an unspecified model after the catalog arrives, preserving manual choices.
+  useEffect(() => {
+    if (modelGroups.length > 0) setDraftUnderlyingModel((current) => current ?? modelGroups[0].model_group);
+  }, [modelGroups, selectedAgent]);
 
   const selectedMCPServerIds = getServerIdsFromTools(draftTools, mcpServers);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "@tremor/react";
 import { Modal } from "antd";
 import { getClaudeCodePluginsList, deleteClaudeCodePlugin } from "@/components/networking";
@@ -27,7 +27,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
 
   const isAdmin = userRole ? isAdminRole(userRole) : false;
 
-  const fetchPlugins = async () => {
+  const fetchPlugins = useCallback(async () => {
     if (!accessToken) {
       setIsLoading(false);
       return;
@@ -42,11 +42,11 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchPlugins();
-  }, [accessToken]);
+  }, [accessToken, fetchPlugins]);
 
   const handleDeleteClick = (pluginName: string, displayName: string) => {
     setPluginToDelete({ name: pluginName, displayName });

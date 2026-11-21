@@ -31,7 +31,7 @@ import { Accordion, AccordionBody, AccordionHeader, Badge, Card, Grid, Text, Tex
 import { Button, Form, Input, InputNumber, Select, Space, Switch, Tabs, Tag, Tooltip } from "antd";
 import MessageManager from "@/components/molecules/message_manager";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { copyToClipboard as utilCopyToClipboard } from "../../utils/dataUtils";
 import AccessGroupSelector from "../common_components/AccessGroupSelector";
 import ModelAliasManager from "../common_components/ModelAliasManager";
@@ -238,7 +238,7 @@ const TeamInfoView: React.FC<TeamInfoProps> = ({
   const visibleTabs = useMemo(() => getTeamInfoVisibleTabs(canEditTeam), [canEditTeam]);
   const defaultTabKey = useMemo(() => getTeamInfoDefaultTab(editTeam, canEditTeam), [editTeam, canEditTeam]);
 
-  const fetchTeamInfo = async () => {
+  const fetchTeamInfo = useCallback(async () => {
     try {
       setLoading(true);
       if (!accessToken) return;
@@ -250,11 +250,11 @@ const TeamInfoView: React.FC<TeamInfoProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, teamId]);
 
   useEffect(() => {
     fetchTeamInfo();
-  }, [teamId, accessToken]);
+  }, [teamId, accessToken, fetchTeamInfo]);
 
   // Fetch organization data when team has organization_id
   useEffect(() => {

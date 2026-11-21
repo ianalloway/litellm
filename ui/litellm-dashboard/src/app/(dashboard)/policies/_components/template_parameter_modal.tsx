@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { Modal, Spin, Radio, Select } from "antd";
 import { Button, TextInput } from "@tremor/react";
 import { modelHubCall, enrichPolicyTemplateStream } from "@/components/networking";
@@ -44,7 +44,7 @@ const TemplateParameterModal: React.FC<TemplateParameterModalProps> = ({
   const [hasGenerated, setHasGenerated] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
-  const parameters: TemplateParameter[] = template?.parameters || [];
+  const parameters: TemplateParameter[] = useMemo(() => template?.parameters || [], [template?.parameters]);
   const hasEnrichment = !!template?.llm_enrichment;
   const enrichmentParam = hasEnrichment ? template.llm_enrichment.parameter : null;
 
@@ -67,15 +67,10 @@ const TemplateParameterModal: React.FC<TemplateParameterModalProps> = ({
       setHasGenerated(false);
       setStatusMessage("");
     }
-  }, [visible, template]);
+  }, [visible, template, parameters]);
 
-  useEffect(() => {
-    if (visible && hasEnrichment && competitorMode === "ai" && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [visible, hasEnrichment, competitorMode]);
 
-  const loadModels = async () => {
+  const loadModels = useCallback(async () => {
     if (!accessToken) return;
     setIsLoadingModels(true);
     try {
@@ -89,7 +84,13 @@ const TemplateParameterModal: React.FC<TemplateParameterModalProps> = ({
     } finally {
       setIsLoadingModels(false);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (visible && hasEnrichment && competitorMode === "ai" && availableModels.length === 0) {
+      loadModels();
+    }
+  }, [visible, hasEnrichment, competitorMode, availableModels.length, loadModels]);
 
   const handleGenerateNames = async () => {
     if (!accessToken || !selectedModel || !template) return;

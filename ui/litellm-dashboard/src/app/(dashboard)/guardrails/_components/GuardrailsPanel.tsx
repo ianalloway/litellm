@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Tabs } from "antd";
 import { ChevronDown, Code, Plus } from "lucide-react";
 import { getGuardrailsList, deleteGuardrailCall } from "@/components/networking";
@@ -43,7 +43,7 @@ const GuardrailsPanel: React.FC<GuardrailsPanelProps> = ({ accessToken, userRole
   const [selectedGuardrailId, setSelectedGuardrailId] = useState<string | null>(null);
   const isAdmin = userRole ? isAdminRole(userRole) : false;
 
-  const fetchGuardrails = async () => {
+  const fetchGuardrails = useCallback(async () => {
     if (!accessToken) {
       return;
     }
@@ -57,11 +57,11 @@ const GuardrailsPanel: React.FC<GuardrailsPanelProps> = ({ accessToken, userRole
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchGuardrails();
-  }, [accessToken]);
+  }, [accessToken, fetchGuardrails]);
 
   const handleAddGuardrail = () => {
     if (selectedGuardrailId) {

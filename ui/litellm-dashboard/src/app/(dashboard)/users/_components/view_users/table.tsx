@@ -53,8 +53,10 @@ interface UserDataTableProps {
   handlePageChange: (newPage: number) => void;
 }
 
+const EMPTY_USERS: UserInfo[] = [];
+
 export function UserDataTable({
-  data = [],
+  data = EMPTY_USERS,
   columns: originalColumns,
   isLoading = false,
   onSortChange,
@@ -65,7 +67,7 @@ export function UserDataTable({
   handleEdit,
   handleDelete,
   handleResetPassword,
-  selectedUsers = [],
+  selectedUsers = EMPTY_USERS,
   onSelectionChange,
   enableSelection = false,
   filters,
@@ -86,10 +88,10 @@ export function UserDataTable({
   const [openInEditMode, setOpenInEditMode] = React.useState<boolean>(false);
   const [showFilters, setShowFilters] = React.useState<boolean>(false);
 
-  const handleUserClick = (userId: string, openInEditMode: boolean = false) => {
+  const handleUserClick = React.useCallback((userId: string, openInEditMode: boolean = false) => {
     setSelectedUserId(userId);
     setOpenInEditMode(openInEditMode);
-  };
+  }, []);
 
   const handleCloseUserInfo = () => {
     setSelectedUserId(null);
@@ -97,7 +99,7 @@ export function UserDataTable({
   };
 
   // Selection handlers
-  const handleSelectUser = (user: UserInfo, isSelected: boolean) => {
+  const handleSelectUser = React.useCallback((user: UserInfo, isSelected: boolean) => {
     if (!onSelectionChange) return;
 
     if (isSelected) {
@@ -105,9 +107,9 @@ export function UserDataTable({
     } else {
       onSelectionChange(selectedUsers.filter((u) => u.user_id !== user.user_id));
     }
-  };
+  }, [onSelectionChange, selectedUsers]);
 
-  const handleSelectAll = (isSelected: boolean) => {
+  const handleSelectAll = React.useCallback((isSelected: boolean) => {
     if (!onSelectionChange) return;
 
     if (isSelected) {
@@ -115,11 +117,11 @@ export function UserDataTable({
     } else {
       onSelectionChange([]);
     }
-  };
+  }, [onSelectionChange, data]);
 
-  const isUserSelected = (user: UserInfo) => {
+  const isUserSelected = React.useCallback((user: UserInfo) => {
     return selectedUsers.some((u) => u.user_id === user.user_id);
-  };
+  }, [selectedUsers]);
 
   const isAllSelected = data.length > 0 && selectedUsers.length === data.length;
   const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < data.length;
@@ -153,6 +155,9 @@ export function UserDataTable({
     handleResetPassword,
     handleUserClick,
     originalColumns,
+    handleSelectUser,
+    handleSelectAll,
+    isUserSelected,
     enableSelection,
     selectedUsers,
     isAllSelected,

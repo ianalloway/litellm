@@ -118,24 +118,24 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({ premiumUser, te
       .filter((id: string | undefined): id is string => Boolean(id));
   }, [healthModelDataResponse?.data]);
 
-  const getProviderFromModel = (model: string) => {
+  const getProviderFromModel = useCallback((model: string) => {
     if (modelCostMapData !== null && modelCostMapData !== undefined) {
       if (typeof modelCostMapData == "object" && model in modelCostMapData) {
         return modelCostMapData[model]["litellm_provider"];
       }
     }
     return "openai";
-  };
+  }, [modelCostMapData]);
 
   const processedModelData = useMemo(() => {
     if (!modelDataResponse?.data) return { data: [] };
     return transformModelData(modelDataResponse, getProviderFromModel);
-  }, [modelDataResponse?.data, getProviderFromModel]);
+  }, [modelDataResponse, getProviderFromModel]);
 
   const processedHealthModelData = useMemo(() => {
     if (!healthModelDataResponse?.data) return { data: [] };
     return transformModelData(healthModelDataResponse, getProviderFromModel);
-  }, [healthModelDataResponse?.data, getProviderFromModel]);
+  }, [healthModelDataResponse, getProviderFromModel]);
 
   const healthPaginationMeta = useMemo(() => {
     return {

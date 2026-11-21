@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Spin, Checkbox, Select, Input, Typography, Tooltip } from "antd";
 import { Button, Card } from "@tremor/react";
 import {
@@ -87,13 +87,8 @@ const AiSuggestionModal: React.FC<AiSuggestionModalProps> = ({
   const [enrichStatusMessage, setEnrichStatusMessage] = useState("");
   const [enrichBrandName, setEnrichBrandName] = useState("");
 
-  useEffect(() => {
-    if (visible && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [visible]);
 
-  const loadModels = async () => {
+  const loadModels = useCallback(async () => {
     if (!accessToken) return;
     setIsLoadingModels(true);
     try {
@@ -107,7 +102,13 @@ const AiSuggestionModal: React.FC<AiSuggestionModalProps> = ({
     } finally {
       setIsLoadingModels(false);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (visible && availableModels.length === 0) {
+      loadModels();
+    }
+  }, [availableModels.length, loadModels, visible]);
 
   const resetState = () => {
     setAttackExamples([""]);

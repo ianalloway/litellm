@@ -64,7 +64,7 @@ describe("CodeInterpreterOutput", () => {
       },
     ];
 
-    render(
+    const { unmount } = render(
       <CodeInterpreterOutput
         code="import matplotlib.pyplot as plt"
         annotations={annotations}
@@ -86,6 +86,9 @@ describe("CodeInterpreterOutput", () => {
     await waitFor(() => {
       expect(screen.getByText("chart.png")).toBeInTheDocument();
     });
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(1));
+    unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith(`blob:${mockBlob}`);
   });
 
   it("should show loading state while fetching images", async () => {

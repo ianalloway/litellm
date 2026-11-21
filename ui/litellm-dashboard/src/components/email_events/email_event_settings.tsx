@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Card, Text, Button } from "@tremor/react";
 import { Typography, Divider, Spin, Checkbox } from "antd";
 import NotificationsManager from "../molecules/notifications_manager";
@@ -17,11 +17,8 @@ const EmailEventSettings: React.FC<EmailEventSettingsProps> = ({ accessToken }) 
   const [eventSettings, setEventSettings] = useState<EmailEventSetting[]>([]);
 
   // Fetch email event settings on component mount
-  useEffect(() => {
-    fetchEventSettings();
-  }, [accessToken]);
 
-  const fetchEventSettings = async () => {
+  const fetchEventSettings = useCallback(async () => {
     if (!accessToken) return;
 
     setLoading(true);
@@ -34,7 +31,11 @@ const EmailEventSettings: React.FC<EmailEventSettingsProps> = ({ accessToken }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchEventSettings();
+  }, [accessToken, fetchEventSettings]);
 
   const handleCheckboxChange = (event: EmailEvent, checked: boolean) => {
     const updatedSettings = eventSettings.map((setting) =>

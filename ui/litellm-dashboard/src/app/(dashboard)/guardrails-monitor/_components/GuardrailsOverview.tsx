@@ -55,7 +55,7 @@ export function GuardrailsOverview({
     enabled: !!accessToken,
   });
 
-  const activeData: PerformanceRow[] = guardrailsData?.rows ?? [];
+  const activeData: PerformanceRow[] = useMemo(() => guardrailsData?.rows ?? [], [guardrailsData?.rows]);
   const metrics = useMemo(() => {
     if (guardrailsData) {
       return {

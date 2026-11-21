@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Card, Title, Text, Grid, Metric, Subtitle, Tab, TabGroup, TabList, TabPanel, TabPanels } from "@tremor/react";
 import { Select, Tooltip } from "antd";
 import { BarChart } from "@/components/shared/charts";
@@ -72,10 +72,7 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
   const [mauLoading, setMauLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
-  // Use today's date as the end date for all API calls
-  const today = new Date();
-
-  const fetchAvailableTags = async () => {
+  const fetchAvailableTags = useCallback(async () => {
     if (!accessToken) return;
 
     setTagsLoading(true);
@@ -87,16 +84,16 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     } finally {
       setTagsLoading(false);
     }
-  };
+  }, [accessToken]);
 
-  const fetchDauData = async () => {
+  const fetchDauData = useCallback(async () => {
     if (!accessToken) return;
 
     setDauLoading(true);
     try {
       const data = await tagDauCall(
         accessToken,
-        today,
+        new Date(),
         userAgentFilter || undefined,
         selectedTags.length > 0 ? selectedTags : undefined,
       );
@@ -106,16 +103,16 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     } finally {
       setDauLoading(false);
     }
-  };
+  }, [accessToken, selectedTags, userAgentFilter]);
 
-  const fetchWauData = async () => {
+  const fetchWauData = useCallback(async () => {
     if (!accessToken) return;
 
     setWauLoading(true);
     try {
       const data = await tagWauCall(
         accessToken,
-        today,
+        new Date(),
         userAgentFilter || undefined,
         selectedTags.length > 0 ? selectedTags : undefined,
       );
@@ -125,16 +122,16 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     } finally {
       setWauLoading(false);
     }
-  };
+  }, [accessToken, selectedTags, userAgentFilter]);
 
-  const fetchMauData = async () => {
+  const fetchMauData = useCallback(async () => {
     if (!accessToken) return;
 
     setMauLoading(true);
     try {
       const data = await tagMauCall(
         accessToken,
-        today,
+        new Date(),
         userAgentFilter || undefined,
         selectedTags.length > 0 ? selectedTags : undefined,
       );
@@ -144,9 +141,9 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     } finally {
       setMauLoading(false);
     }
-  };
+  }, [accessToken, selectedTags, userAgentFilter]);
 
-  const fetchSummaryData = async () => {
+  const fetchSummaryData = useCallback(async () => {
     if (!accessToken || !dateValue.from || !dateValue.to) return;
 
     setSummaryLoading(true);
@@ -163,12 +160,12 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     } finally {
       setSummaryLoading(false);
     }
-  };
+  }, [accessToken, dateValue.from, dateValue.to, selectedTags]);
 
   // Effect to fetch available tags on mount
   useEffect(() => {
     fetchAvailableTags();
-  }, [accessToken]);
+  }, [accessToken, fetchAvailableTags]);
 
   // Effect for DAU/WAU/MAU data (independent of date picker)
   useEffect(() => {
@@ -181,7 +178,7 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [accessToken, userAgentFilter, selectedTags]);
+  }, [accessToken, userAgentFilter, selectedTags, fetchDauData, fetchWauData, fetchMauData]);
 
   // Effect for summary data (depends on date picker)
   useEffect(() => {
@@ -192,7 +189,7 @@ const UserAgentActivity: React.FC<UserAgentActivityProps> = ({ accessToken, user
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [accessToken, dateValue, selectedTags]);
+  }, [accessToken, dateValue, fetchSummaryData, selectedTags]);
 
   // Helper function to extract user agent from tag
   const extractUserAgent = (tag: string): string => {

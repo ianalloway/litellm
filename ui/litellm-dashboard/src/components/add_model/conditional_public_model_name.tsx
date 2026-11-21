@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Form, Table } from "antd";
 import { TextInput } from "@tremor/react";
 import { Tooltip } from "../atoms/index";
@@ -9,8 +9,8 @@ const ConditionalPublicModelName: React.FC = () => {
   const [tableKey, setTableKey] = useState(0); // Add a key to force table re-render
 
   // Watch the 'model' field for changes and ensure it's always an array
-  const modelValue = Form.useWatch("model", form) || [];
-  const selectedModels = Array.isArray(modelValue) ? modelValue : [modelValue];
+  const modelValue = Form.useWatch("model", form);
+  const selectedModels = useMemo(() => Array.isArray(modelValue) ? modelValue : modelValue ? [modelValue] : [], [modelValue]);
   const customModelName = Form.useWatch("custom_model_name", form);
   const showPublicModelName = !selectedModels.includes("all-wildcard");
   const selectedProvider = Form.useWatch("custom_llm_provider", form);

@@ -15,7 +15,7 @@ import { Grid, TabPanel } from "@tremor/react";
 import { Badge, Button, Select, Skeleton, Space, Typography } from "antd";
 import ModelSettingsModal from "@/components/model_dashboard/ModelSettingsModal/ModelSettingsModal";
 import { useDebouncedCallback } from "@tanstack/react-pacer/debouncer";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useModelsInfo } from "../../hooks/models/useModels";
 import { transformModelData } from "../utils/modelDataTransformer";
 type ModelViewMode = "all" | "current_team";
@@ -103,19 +103,19 @@ const AllModelsTab = ({
   } = useModelsInfo(currentPage, pageSize, debouncedSearch || undefined, undefined, teamIdForQuery, sortBy, sortOrder);
   const isLoading = isLoadingModelsInfo || isLoadingModelCostMap;
 
-  const getProviderFromModel = (model: string) => {
+  const getProviderFromModel = useCallback((model: string) => {
     if (modelCostMapData !== null && modelCostMapData !== undefined) {
       if (typeof modelCostMapData == "object" && model in modelCostMapData) {
         return modelCostMapData[model]["litellm_provider"];
       }
     }
     return "openai";
-  };
+  }, [modelCostMapData]);
 
   const modelData = useMemo(() => {
     if (!rawModelData) return { data: [] };
     return transformModelData(rawModelData, getProviderFromModel);
-  }, [rawModelData, modelCostMapData]);
+  }, [rawModelData, getProviderFromModel]);
 
   const [deleteModalModelId, setDeleteModalModelId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);

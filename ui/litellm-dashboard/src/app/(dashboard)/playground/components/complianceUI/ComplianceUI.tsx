@@ -616,16 +616,7 @@ export default function ComplianceUI({
       setIsRunning(false);
       batchAbortControllerRef.current = null;
     }
-  }, [
-    accessToken,
-    selectedPromptIds,
-    selectedPolicies,
-    selectedGuardrails,
-    allFrameworks,
-    backendMode,
-    fixedModel,
-    requestProxyBaseUrl,
-  ]);
+  }, [accessToken, selectedPromptIds, selectedPolicies, selectedGuardrails, allFrameworks, backendMode, fixedModel]);
 
   const completedResults = testResults.filter((r) => r.status === "complete");
   const matchCount = completedResults.filter((r) => r.isMatch).length;

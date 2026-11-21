@@ -75,11 +75,12 @@ const ModelConnectionTest: React.FC<ModelConnectionTestProps> = ({
     }
   };
 
+  const initialConnectionTest = React.useRef(testModelConnection);
   React.useEffect(() => {
     // Run the test once when component mounts
     // Add a small timeout to ensure form values are ready
     const timer = setTimeout(() => {
-      testModelConnection();
+      initialConnectionTest.current();
     }, 200);
 
     return () => clearTimeout(timer);

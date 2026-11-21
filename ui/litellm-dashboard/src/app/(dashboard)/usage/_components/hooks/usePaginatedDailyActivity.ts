@@ -100,7 +100,6 @@ export function usePaginatedDailyActivity({
   });
   const [cancelled, setCancelled] = useState(false);
 
-  const fetchIdRef = useRef(0);
   const cancelledRef = useRef(false);
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,11 +131,11 @@ export function usePaginatedDailyActivity({
       return;
     }
 
-    const currentFetchId = ++fetchIdRef.current;
+    let disposed = false;
     cancelledRef.current = false;
     setCancelled(false);
 
-    const isStale = () => fetchIdRef.current !== currentFetchId || cancelledRef.current;
+    const isStale = () => disposed || cancelledRef.current;
 
     /** Cancellable delay that clears itself on cleanup. */
     const delay = (ms: number) =>
@@ -225,7 +224,7 @@ export function usePaginatedDailyActivity({
     run();
 
     return () => {
-      fetchIdRef.current++;
+      disposed = true;
       if (delayTimerRef.current !== null) {
         clearTimeout(delayTimerRef.current);
         delayTimerRef.current = null;

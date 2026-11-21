@@ -186,7 +186,7 @@ export default function CompareUI({ accessToken, disabledPersonalKeyCreation }: 
     return () => {
       active = false;
     };
-  }, [effectiveApiKey, isA2AMode]);
+  }, [customProxyBaseUrl, effectiveApiKey, isA2AMode]);
 
   useEffect(() => {
     if (modelOptions.length === 0) {

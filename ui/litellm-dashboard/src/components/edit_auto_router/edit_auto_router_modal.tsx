@@ -103,11 +103,6 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
   });
   const isComplexityRouter = isComplexityRouterModel(modelData);
 
-  useEffect(() => {
-    if (isVisible && modelData) {
-      initializeForm();
-    }
-  }, [isVisible, modelData]);
 
   useEffect(() => {
     const fetchModelAccessGroups = async () => {
@@ -136,7 +131,8 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
     }
   }, [isVisible, accessToken]);
 
-  const initializeForm = () => {
+  useEffect(() => {
+    if (!isVisible || !modelData) return;
     try {
       if (isComplexityRouterModel(modelData)) {
         // Parse the complexity_router_config if it exists and is a string
@@ -190,15 +186,19 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
         model_access_group: modelData.model_info?.access_groups || [],
       });
 
-      // Check if using custom models
-      const allModelGroups = new Set(modelInfo.map((model) => model.model_group));
-      setShowCustomDefaultModel(!allModelGroups.has(modelData.litellm_params?.auto_router_default_model));
-      setShowCustomEmbeddingModel(!allModelGroups.has(modelData.litellm_params?.auto_router_embedding_model));
     } catch (error) {
       console.error("Error parsing auto router config:", error);
       NotificationsManager.fromBackend("Error loading auto router configuration");
     }
-  };
+  }, [isVisible, modelData, form]);
+
+  useEffect(() => {
+    if (!isVisible || !modelData || isComplexityRouterModel(modelData)) return;
+    // Check if using custom models
+    const allModelGroups = new Set(modelInfo.map((model) => model.model_group));
+    setShowCustomDefaultModel(!allModelGroups.has(modelData.litellm_params?.auto_router_default_model));
+    setShowCustomEmbeddingModel(!allModelGroups.has(modelData.litellm_params?.auto_router_embedding_model));
+  }, [isVisible, modelData, modelInfo]);
 
   const handleSubmit = async () => {
     try {

@@ -70,12 +70,14 @@ export function MCPServerPermissions({
   }, [accessToken, mcpServers.length]);
 
   // Fetch toolset details
+  const toolsetIds = JSON.stringify(mcpToolsets);
   useEffect(() => {
+    const ids: string[] = JSON.parse(toolsetIds);
     const fetchToolsets = async () => {
-      if (accessToken && mcpToolsets.length > 0) {
+      if (accessToken && ids.length > 0) {
         try {
           const all = await fetchMCPToolsets(accessToken);
-          const filtered = Array.isArray(all) ? all.filter((t: MCPToolset) => mcpToolsets.includes(t.toolset_id)) : [];
+          const filtered = Array.isArray(all) ? all.filter((t: MCPToolset) => ids.includes(t.toolset_id)) : [];
           setToolsetDetails(filtered);
         } catch (error) {
           console.error("Error fetching toolsets:", error);
@@ -83,7 +85,7 @@ export function MCPServerPermissions({
       }
     };
     fetchToolsets();
-  }, [accessToken, mcpToolsets.length]);
+  }, [accessToken, toolsetIds]);
 
   // Function to get display name for MCP server
   const getMCPServerDisplayName = (serverId: string) => {
