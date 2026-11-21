@@ -104,9 +104,9 @@ const mockIsTokenValid = vi.fn();
 const mockSetToken = vi.fn();
 const mockRemoveToken = vi.fn();
 vi.mock("@/utils/mcpTokenStore", () => ({
-  getToken: (...args: any[]) => mockGetToken(...args),
-  isTokenValid: (...args: any[]) => mockIsTokenValid(...args),
-  setToken: (...args: any[]) => mockSetToken(...args),
+  getToken: (...args: Parameters<typeof import("@/utils/mcpTokenStore").getToken>) => mockGetToken(...args),
+  isTokenValid: (...args: Parameters<typeof import("@/utils/mcpTokenStore").isTokenValid>) => mockIsTokenValid(...args),
+  setToken: (...args: Parameters<typeof import("@/utils/mcpTokenStore").setToken>) => mockSetToken(...args),
   removeToken: (...args: unknown[]) => mockRemoveToken(...args),
 }));
 

@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -5,19 +6,26 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 // Mock networking module
 const mockGetAgentsList = vi.fn();
 vi.mock("../networking", () => ({
-  getAgentsList: (...args: any[]) => mockGetAgentsList(...args),
+  getAgentsList: (...args: Parameters<typeof import("../networking").getAgentsList>) => mockGetAgentsList(...args),
 }));
 
 // Mock antd Select
 vi.mock("antd", () => {
-  const SelectComponent = ({ children, onChange, value, mode, placeholder, loading, disabled, ...props }: any) => (
+  type SelectFixtureProps = Omit<ComponentProps<"select">, "value" | "onChange"> & {
+    value?: readonly string[];
+    mode?: "multiple";
+    loading?: boolean;
+    onChange?: (selected: string[]) => void;
+  };
+
+  const SelectComponent = ({ children, onChange, value, mode, loading, disabled }: SelectFixtureProps) => (
     <div data-testid="agent-select" data-loading={loading} data-disabled={disabled}>
       <select
         data-testid="select-input"
         multiple={mode === "multiple"}
         value={value || []}
         onChange={(e) => {
-          const selected = Array.from(e.target.selectedOptions, (opt: any) => opt.value);
+          const selected = Array.from(e.target.selectedOptions, (option) => option.value);
           onChange?.(selected);
         }}
         disabled={disabled}
@@ -28,7 +36,7 @@ vi.mock("antd", () => {
     </div>
   );
 
-  SelectComponent.Option = ({ children, value, ...props }: any) => (
+  SelectComponent.Option = ({ children, value, ...props }: ComponentProps<"option">) => (
     <option value={value} {...props}>
       {children}
     </option>
@@ -74,18 +82,14 @@ describe("AgentSelector", () => {
 
   it("shows loading state while fetching", async () => {
     // Keep the promise pending
-    let resolve: any;
-    mockGetAgentsList.mockReturnValue(
-      new Promise((r) => {
-        resolve = r;
-      }),
-    );
+    const agents = Promise.withResolvers<{ agents: [] }>();
+    mockGetAgentsList.mockReturnValue(agents.promise);
 
     render(<AgentSelector {...defaultProps} />);
     expect(screen.getByTestId("agent-select")).toHaveAttribute("data-loading", "true");
 
     // Resolve to clean up
-    resolve({ agents: [] });
+    agents.resolve({ agents: [] });
     await waitFor(() => {
       expect(screen.getByTestId("agent-select")).toHaveAttribute("data-loading", "false");
     });
