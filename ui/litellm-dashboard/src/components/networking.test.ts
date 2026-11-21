@@ -18,6 +18,20 @@ vi.mock("./molecules/notifications_manager", () => ({
   },
 }));
 
+it("preserves the application console when the networking module loads in production", async () => {
+  const originalLog = Object.getOwnPropertyDescriptor(console, "log")!;
+  vi.stubEnv("NODE_ENV", "production");
+  try {
+    vi.resetModules();
+    await import("./networking");
+    expect(Object.getOwnPropertyDescriptor(console, "log")).toEqual(originalLog);
+  } finally {
+    Object.defineProperty(console, "log", originalLog);
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  }
+});
+
 describe("networking - expired session handling", () => {
   const originalFetch = global.fetch;
 

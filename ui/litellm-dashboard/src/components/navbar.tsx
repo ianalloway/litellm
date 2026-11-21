@@ -5,7 +5,7 @@ import { useWorker } from "@/hooks/useWorker";
 import { getProxyBaseUrl } from "@/components/networking";
 import { useTheme } from "@/contexts/ThemeContext";
 import { clearTokenCookies } from "@/utils/cookieUtils";
-import { clearStoredReturnUrl, getLoginUrl } from "@/utils/returnUrlUtils";
+import { switchWorker } from "@/utils/switchWorker";
 import useProxySettings from "@/app/(dashboard)/hooks/proxySettings/useProxySettings";
 import { DownOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { Tag } from "antd";
@@ -49,14 +49,6 @@ const Navbar: React.FC<NavbarProps> = ({
     localStorage.removeItem("litellm_selected_worker_id");
     localStorage.removeItem("litellm_worker_url");
     window.location.href = proxySettings.PROXY_LOGOUT_URL || "";
-  };
-
-  const handleWorkerSwitch = (workerId: string) => {
-    clearTokenCookies();
-    clearStoredReturnUrl();
-    localStorage.removeItem("litellm_selected_worker_id");
-    localStorage.removeItem("litellm_worker_url");
-    window.location.href = `${getLoginUrl()}?worker=${encodeURIComponent(workerId)}`;
   };
 
   return (
@@ -121,7 +113,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-4">
             {showWorkerSwitch && (
               <div className="flex shrink-0 items-center">
-                <WorkerDropdown onWorkerSwitch={handleWorkerSwitch} />
+                <WorkerDropdown onWorkerSwitch={switchWorker} />
               </div>
             )}
 

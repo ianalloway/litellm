@@ -14,10 +14,6 @@ export async function makeOpenAIEmbeddingsRequest(
   }
 
   // Base URL should be the current base_url
-  const isLocal = process.env.NODE_ENV === "development";
-  if (isLocal !== true) {
-    console.log = function () {};
-  }
 
   const proxyBaseUrl = customBaseUrl || getProxyBaseUrl();
   // Prepare headers with tags and trace ID
