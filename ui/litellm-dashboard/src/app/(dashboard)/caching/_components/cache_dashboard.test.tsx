@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "../../../../../tests/test-utils";
 import CacheDashboard from "./cache_dashboard";
 
@@ -12,6 +12,16 @@ const { adminGlobalCacheActivity, cachingHealthCheckCall } = vi.hoisted(() => ({
 vi.mock("@/components/networking", () => ({
   adminGlobalCacheActivity,
   cachingHealthCheckCall,
+  getCacheSettingsCall: vi.fn().mockResolvedValue({ current_values: {} }),
+  modelHubCall: vi.fn().mockResolvedValue({ data: [] }),
+}));
+
+vi.mock("@/components/shared/usage_date_picker", () => ({
+  default: ({ onValueChange }: { onValueChange: (value: { from: Date; to: Date }) => void }) => (
+    <button onClick={() => onValueChange({ from: new Date("2024-01-01"), to: new Date("2024-01-07") })}>
+      Select January dates
+    </button>
+  ),
 }));
 
 const cacheActivity = [
@@ -67,6 +77,26 @@ describe("CacheDashboard cache analytics charts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adminGlobalCacheActivity.mockResolvedValue(cacheActivity);
+  });
+
+  it("loads a date range once, ignores an older response, and refreshes the selected range", async () => {
+    let resolveInitial!: (data: typeof cacheActivity) => void;
+    adminGlobalCacheActivity.mockReturnValueOnce(new Promise<typeof cacheActivity>((resolve) => { resolveInitial = resolve; }));
+    renderDashboard();
+
+    const januaryCall = ["sk-test", "2024-01-01", "2024-01-07"];
+    fireEvent.click(screen.getByRole("button", { name: "Select January dates" }));
+    const hits = screen.getByText("Cache Hits").parentElement!;
+    expect(await within(hits).findByText("400")).toBeInTheDocument();
+    expect(adminGlobalCacheActivity).toHaveBeenCalledTimes(2);
+    expect(adminGlobalCacheActivity).toHaveBeenLastCalledWith(...januaryCall);
+
+    await act(async () => resolveInitial([]));
+    expect(within(hits).getByText("400")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh cache activity" }));
+    await waitFor(() => expect(adminGlobalCacheActivity).toHaveBeenCalledTimes(3));
+    expect(adminGlobalCacheActivity).toHaveBeenLastCalledWith(...januaryCall);
   });
 
   it("renders both chart card titles", async () => {
