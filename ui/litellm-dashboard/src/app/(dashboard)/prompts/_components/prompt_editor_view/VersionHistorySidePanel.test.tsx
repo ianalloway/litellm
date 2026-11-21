@@ -135,15 +135,13 @@ describe("VersionHistorySidePanel", () => {
     });
 
     it("should show loading skeleton initially", async () => {
-      // Mock a delayed response to show loading state
-      mockGetPromptVersions.mockImplementationOnce(
-        () => new Promise((resolve) => setTimeout(() => resolve({ prompts: mockPromptVersions }), 100)),
-      );
+      const response = Promise.withResolvers<{ prompts: typeof mockPromptVersions }>();
+      mockGetPromptVersions.mockReturnValueOnce(response.promise);
 
       render(<VersionHistorySidePanel {...defaultProps} />);
-      expect(screen.getByTestId("skeleton")).toBeInTheDocument();
+      expect(await screen.findByTestId("skeleton")).toBeInTheDocument();
+      response.resolve({ prompts: mockPromptVersions });
 
-      // Wait for loading to complete
       await waitFor(() => {
         expect(screen.queryByTestId("skeleton")).not.toBeInTheDocument();
       });
