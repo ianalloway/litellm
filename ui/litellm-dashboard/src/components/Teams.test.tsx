@@ -257,12 +257,13 @@ describe("Teams - handleCreate organization handling", () => {
       formValues.organization_id = organizationId.trim();
     }
 
-    expect(formValues).toEqual({
+    const expectedTeamSettings = {
       team_alias: "Test Team",
       organization_id: null,
       models: ["gpt-4"],
       max_budget: 100,
-    });
+    };
+    expect(formValues).toEqual(expectedTeamSettings);
     expect(formValues.organization_id).not.toBe("");
     expect(formValues.organization_id).toBeNull();
   });
@@ -497,7 +498,7 @@ describe("Teams - access_group_ids in team create", () => {
     vi.mocked(fetchAvailableModelsForTeamOrKey).mockResolvedValue(["gpt-4", "gpt-3.5-turbo"]);
     vi.mocked(fetchMCPAccessGroups).mockResolvedValue([]);
     vi.mocked(getGuardrailsList).mockResolvedValue({ guardrails: [] });
-    vi.mocked(teamCreateCall).mockResolvedValue({
+    const mockTeamDetails = {
       team_id: "new-team-1",
       team_alias: "Test Team",
       models: ["gpt-4"],
@@ -505,7 +506,8 @@ describe("Teams - access_group_ids in team create", () => {
       keys: [],
       members_with_roles: [],
       spend: 0,
-    });
+    };
+    vi.mocked(teamCreateCall).mockResolvedValue(mockTeamDetails);
     mockUseOrganizations.mockReturnValue({
       data: [{ organization_id: "org-1", organization_alias: "Org 1", models: [], members: [] }],
     });
@@ -619,7 +621,7 @@ describe("Teams - LIT-2530 organization stays optional for proxy admin with a si
     vi.mocked(fetchAvailableModelsForTeamOrKey).mockResolvedValue(["gpt-4"]);
     vi.mocked(fetchMCPAccessGroups).mockResolvedValue([]);
     vi.mocked(getGuardrailsList).mockResolvedValue({ guardrails: [] });
-    vi.mocked(teamCreateCall).mockResolvedValue({
+    const initialTeamDetails = {
       team_id: "new-team-1",
       team_alias: "No Org Team",
       models: ["gpt-4"],
@@ -627,7 +629,8 @@ describe("Teams - LIT-2530 organization stays optional for proxy admin with a si
       keys: [],
       members_with_roles: [],
       spend: 0,
-    });
+    };
+    vi.mocked(teamCreateCall).mockResolvedValue(initialTeamDetails);
     mockUseOrganizations.mockReturnValue({
       data: [{ organization_id: "org-1", organization_alias: "Org 1", models: [], members: [] }],
     });

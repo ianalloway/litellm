@@ -71,17 +71,15 @@ describe("audio_transcription", () => {
       0.5,
     );
 
-    expect(mockCreate).toHaveBeenCalledWith(
-      {
-        model: "whisper-1",
-        file: mockFile,
-        language: "en",
-        prompt: "This is a prompt",
-        response_format: "json",
-        temperature: 0.5,
-      },
-      { signal },
-    );
+    const expectedRequestPayload = {
+      model: "whisper-1",
+      file: mockFile,
+      language: "en",
+      prompt: "This is a prompt",
+      response_format: "json",
+      temperature: 0.5,
+    };
+    expect(mockCreate).toHaveBeenCalledWith(expectedRequestPayload, { signal });
     expect(mockUpdateUI).toHaveBeenCalledWith("This is the transcribed text from the audio file.", "whisper-1");
   });
 

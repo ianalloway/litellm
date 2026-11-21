@@ -497,7 +497,7 @@ describe("UsagePage", () => {
   };
 
   beforeEach(() => {
-    mockUseAuthorized.mockReturnValue({
+    const mockAuthorization = {
       isLoading: false,
       isAuthorized: true,
       token: "mock-token",
@@ -508,7 +508,8 @@ describe("UsagePage", () => {
       premiumUser: true,
       disabledPersonalKeyCreation: false,
       showSSOBanner: false,
-    });
+    };
+    mockUseAuthorized.mockReturnValue(mockAuthorization);
     mockUseCurrentUser.mockReturnValue({
       data: {
         user_id: "user-123",
@@ -651,7 +652,7 @@ describe("UsagePage", () => {
   });
 
   it("should show tag usage selector option for internal users", async () => {
-    mockUseAuthorized.mockReturnValue({
+    const initialAuthorization = {
       isLoading: false,
       isAuthorized: true,
       token: "mock-token",
@@ -662,7 +663,8 @@ describe("UsagePage", () => {
       premiumUser: true,
       disabledPersonalKeyCreation: false,
       showSSOBanner: false,
-    });
+    };
+    mockUseAuthorized.mockReturnValue(initialAuthorization);
 
     renderWithProviders(<UsagePage {...defaultProps} />);
 
@@ -839,7 +841,7 @@ describe("UsagePage", () => {
 
   describe("non-admin user behavior", () => {
     it("should not render user selector for non-admin users", async () => {
-      mockUseAuthorized.mockReturnValue({
+      const updatedAuthorization = {
         isLoading: false,
         isAuthorized: true,
         token: "mock-token",
@@ -850,7 +852,8 @@ describe("UsagePage", () => {
         premiumUser: false,
         disabledPersonalKeyCreation: false,
         showSSOBanner: false,
-      });
+      };
+      mockUseAuthorized.mockReturnValue(updatedAuthorization);
 
       renderWithProviders(<UsagePage {...defaultProps} />);
 
@@ -865,7 +868,7 @@ describe("UsagePage", () => {
     });
 
     it("should always pass own userId for non-admin users", async () => {
-      mockUseAuthorized.mockReturnValue({
+      const alternateAuthorization = {
         isLoading: false,
         isAuthorized: true,
         token: "mock-token",
@@ -876,7 +879,8 @@ describe("UsagePage", () => {
         premiumUser: false,
         disabledPersonalKeyCreation: false,
         showSSOBanner: false,
-      });
+      };
+      mockUseAuthorized.mockReturnValue(alternateAuthorization);
 
       renderWithProviders(<UsagePage {...defaultProps} />);
 

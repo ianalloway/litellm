@@ -254,12 +254,13 @@ describe("TeamInfoView", () => {
     });
 
     it("should display error message when team is not found", async () => {
-      vi.mocked(networking.teamInfoCall).mockResolvedValue({
+      const mockTeamDetails = {
         team_id: "123",
         team_info: null as any,
         keys: [],
         team_memberships: [],
-      });
+      };
+      vi.mocked(networking.teamInfoCall).mockResolvedValue(mockTeamDetails);
 
       renderWithProviders(<TeamInfoView {...defaultProps} />);
 
