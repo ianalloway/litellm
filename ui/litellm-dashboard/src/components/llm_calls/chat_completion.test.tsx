@@ -66,17 +66,15 @@ describe("chat_completion", () => {
     await makeOpenAIChatCompletionRequest(mockChatHistory, mockUpdateUI, "gpt-4", "test-token");
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
-    expect(mockCreate).toHaveBeenCalledWith(
-      {
-        model: "gpt-4",
-        stream: true,
-        stream_options: {
-          include_usage: true,
-        },
-        messages: mockChatHistory,
+    const expectedRequestPayload = {
+      model: "gpt-4",
+      stream: true,
+      stream_options: {
+        include_usage: true,
       },
-      { signal: undefined },
-    );
+      messages: mockChatHistory,
+    };
+    expect(mockCreate).toHaveBeenCalledWith(expectedRequestPayload, { signal: undefined });
     expect(mockUpdateUI).toHaveBeenCalledWith("Hello", "gpt-4");
     expect(mockUpdateUI).toHaveBeenCalledWith(" there", "gpt-4");
   });
@@ -105,7 +103,7 @@ describe("chat_completion", () => {
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs).toMatchObject({
+    const initialExpectedRequestPayload = {
       model: "gpt-4",
       stream: true,
       stream_options: {
@@ -114,7 +112,8 @@ describe("chat_completion", () => {
       messages: mockChatHistory,
       temperature: 0.7,
       max_tokens: 100,
-    });
+    };
+    expect(callArgs).toMatchObject(initialExpectedRequestPayload);
   });
 
   it("should configure MCP tools per server with restrictions", async () => {

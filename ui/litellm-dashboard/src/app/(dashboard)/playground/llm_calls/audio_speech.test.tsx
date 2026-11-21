@@ -68,16 +68,14 @@ describe("audio_speech", () => {
       1.5,
     );
 
-    expect(mockCreate).toHaveBeenCalledWith(
-      {
-        model: "tts-1-hd",
-        input: "Test input",
-        voice: "nova",
-        response_format: "mp3",
-        speed: 1.5,
-      },
-      { signal },
-    );
+    const expectedRequestPayload = {
+      model: "tts-1-hd",
+      input: "Test input",
+      voice: "nova",
+      response_format: "mp3",
+      speed: 1.5,
+    };
+    expect(mockCreate).toHaveBeenCalledWith(expectedRequestPayload, { signal });
     expect(mockUpdateUI).toHaveBeenCalledWith("blob:mock-audio-url", "tts-1-hd");
   });
 

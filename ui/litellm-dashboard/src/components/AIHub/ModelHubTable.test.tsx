@@ -85,13 +85,14 @@ describe("ModelHubTable", () => {
     mockLocationReplace.mockClear();
 
     // Setup other required mocks
-    vi.mocked(networking.getUiConfig).mockResolvedValue({
+    const mockUiSettings = {
       server_root_path: "/",
       proxy_base_url: "http://localhost:4000",
       auto_redirect_to_sso: false,
       admin_ui_disabled: false,
       sso_configured: false,
-    });
+    };
+    vi.mocked(networking.getUiConfig).mockResolvedValue(mockUiSettings);
     vi.mocked(networking.modelHubPublicModelsCall).mockResolvedValue([]);
     vi.mocked(networking.getUiSettings).mockResolvedValue({
       values: {
@@ -156,13 +157,14 @@ describe("ModelHubTable", () => {
     const getUiConfigMock = vi.mocked(networking.getUiConfig);
     const modelHubPublicModelsCallMock = vi.mocked(networking.modelHubPublicModelsCall);
 
-    getUiConfigMock.mockResolvedValue({
+    const initialUiSettings = {
       server_root_path: "/",
       proxy_base_url: "http://localhost:4000",
       auto_redirect_to_sso: false,
       admin_ui_disabled: false,
       sso_configured: false,
-    });
+    };
+    getUiConfigMock.mockResolvedValue(initialUiSettings);
     modelHubPublicModelsCallMock.mockResolvedValue([]);
     vi.mocked(networking.getUiSettings).mockResolvedValue({
       values: {},

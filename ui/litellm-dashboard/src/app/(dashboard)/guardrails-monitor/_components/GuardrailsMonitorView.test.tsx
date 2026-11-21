@@ -22,13 +22,14 @@ function wrapper({ children }: { children: React.ReactNode }) {
 
 describe("GuardrailsMonitorView", () => {
   it("should render overview and fetch guardrails usage when accessToken is provided", async () => {
-    mockGetGuardrailsUsageOverview.mockResolvedValue({
+    const mockMonitorMetrics = {
       rows: [],
       chart: [],
       totalRequests: 0,
       totalBlocked: 0,
       passRate: 100,
-    });
+    };
+    mockGetGuardrailsUsageOverview.mockResolvedValue(mockMonitorMetrics);
 
     render(<GuardrailsMonitorView accessToken="test-token" />, { wrapper });
 

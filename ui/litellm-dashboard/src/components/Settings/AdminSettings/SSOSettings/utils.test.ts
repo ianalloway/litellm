@@ -68,7 +68,7 @@ describe("processSSOSettingsPayload", () => {
       const result = processSSOSettingsPayload(formValues);
 
       expect(result.other_field).toBe("value");
-      expect(result.role_mappings).toEqual({
+      const expectedProviderConfig = {
         provider: "generic",
         group_claim: "groups",
         default_role: "proxy_admin",
@@ -78,7 +78,8 @@ describe("processSSOSettingsPayload", () => {
           internal_user: ["user1"],
           internal_user_viewer: ["internal_viewer1", "internal_viewer2"],
         },
-      });
+      };
+      expect(result.role_mappings).toEqual(expectedProviderConfig);
     });
 
     it("should handle empty team strings", () => {
@@ -95,12 +96,13 @@ describe("processSSOSettingsPayload", () => {
 
       const result = processSSOSettingsPayload(formValues);
 
-      expect(result.role_mappings.roles).toEqual({
+      const expectedRoleMapping = {
         proxy_admin: [],
         proxy_admin_viewer: [],
         internal_user: [],
         internal_user_viewer: [],
-      });
+      };
+      expect(result.role_mappings.roles).toEqual(expectedRoleMapping);
     });
 
     it("should handle undefined team fields", () => {
@@ -113,12 +115,13 @@ describe("processSSOSettingsPayload", () => {
 
       const result = processSSOSettingsPayload(formValues);
 
-      expect(result.role_mappings.roles).toEqual({
+      const initialExpectedRoleMapping = {
         proxy_admin: [],
         proxy_admin_viewer: [],
         internal_user: [],
         internal_user_viewer: [],
-      });
+      };
+      expect(result.role_mappings.roles).toEqual(initialExpectedRoleMapping);
     });
 
     it("should handle whitespace-only team strings", () => {
@@ -135,12 +138,13 @@ describe("processSSOSettingsPayload", () => {
 
       const result = processSSOSettingsPayload(formValues);
 
-      expect(result.role_mappings.roles).toEqual({
+      const updatedExpectedRoleMapping = {
         proxy_admin: [],
         proxy_admin_viewer: [],
         internal_user: ["user1", "user2"],
         internal_user_viewer: ["viewer1", "viewer2"],
-      });
+      };
+      expect(result.role_mappings.roles).toEqual(updatedExpectedRoleMapping);
     });
 
     it("should trim whitespace from team names", () => {
@@ -157,12 +161,13 @@ describe("processSSOSettingsPayload", () => {
 
       const result = processSSOSettingsPayload(formValues);
 
-      expect(result.role_mappings.roles).toEqual({
+      const alternateExpectedRoleMapping = {
         proxy_admin: ["admin1", "admin2"],
         proxy_admin_viewer: ["viewer1"],
         internal_user: ["user1", "user2"],
         internal_user_viewer: ["viewer1", "viewer2"],
-      });
+      };
+      expect(result.role_mappings.roles).toEqual(alternateExpectedRoleMapping);
     });
 
     it("should filter out empty strings after trimming", () => {
@@ -417,14 +422,15 @@ describe("processSSOSettingsPayload", () => {
 
       const result = processSSOSettingsPayload(formValues);
 
-      expect(result).toEqual({
+      const expectedSsoPayload = {
         sso_provider: "google",
         client_id: "123",
         client_secret: "secret",
         redirect_url: "http://example.com",
         custom_field: { nested: "value" },
         array_field: [1, 2, 3],
-      });
+      };
+      expect(result).toEqual(expectedSsoPayload);
     });
   });
 });

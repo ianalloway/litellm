@@ -54,12 +54,13 @@ function renderWithProviders(ui: React.ReactElement) {
 describe("CreateUserButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetProxyUISettings.mockResolvedValue({
+    const mockProxyConfig = {
       PROXY_BASE_URL: null,
       PROXY_LOGOUT_URL: null,
       DEFAULT_TEAM_DISABLED: false,
       SSO_ENABLED: false,
-    });
+    };
+    mockGetProxyUISettings.mockResolvedValue(mockProxyConfig);
   });
 
   describe("rendering and visibility", () => {

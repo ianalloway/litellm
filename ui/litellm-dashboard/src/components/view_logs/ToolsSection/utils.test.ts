@@ -47,12 +47,13 @@ describe("ToolsSection utils", () => {
       const result = parseToolsFromLog(log as LogEntry);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      const expectedToolCall = {
         index: 1,
         name: "get_weather",
         description: "Get the current weather",
         called: false,
-      });
+      };
+      expect(result[0]).toMatchObject(expectedToolCall);
     });
 
     it("should parse tools from messages object format", () => {
@@ -189,13 +190,14 @@ describe("ToolsSection utils", () => {
       const result = parseToolsFromLog(log as LogEntry);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      const initialExpectedToolCall = {
         index: 1,
         name: "minimal_tool",
         description: "",
         parameters: {},
         called: false,
-      });
+      };
+      expect(result[0]).toMatchObject(initialExpectedToolCall);
     });
 
     it("should handle invalid JSON in tool call arguments gracefully", () => {

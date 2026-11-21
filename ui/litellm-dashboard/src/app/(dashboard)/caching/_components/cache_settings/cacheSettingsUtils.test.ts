@@ -43,13 +43,14 @@ describe("buildInitialValues", () => {
 describe("buildCachePayload", () => {
   it("should tag the payload as redis and drop empty fields and the UI-only redis_type", () => {
     const payload = buildCachePayload("node", { host: "localhost", port: "6379", username: "" }, { forTesting: false });
-    expect(payload).toEqual({
+    const expectedCacheSettings = {
       type: "redis",
       host: "localhost",
       port: "6379",
       ssl: false,
       ssl_check_hostname: false,
-    });
+    };
+    expect(payload).toEqual(expectedCacheSettings);
     expect(payload).not.toHaveProperty("redis_type");
     expect(payload).not.toHaveProperty("username");
   });
