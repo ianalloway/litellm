@@ -15,7 +15,7 @@ vi.mock("../common/queryKeysFactory", () => ({
   createQueryKeys: vi.fn((resource: string) => ({
     all: [resource],
     lists: () => [resource, "list"],
-    list: (params?: any) => [resource, "list", { params }],
+    list: (params?: unknown) => [resource, "list", { params }],
     details: () => [resource, "detail"],
     detail: (uid: string) => [resource, "detail", uid],
   })),
@@ -53,7 +53,7 @@ describe("useUIConfig", () => {
 
   it("should return UI config data when query is successful", async () => {
     // Mock successful API call
-    (getUiConfig as any).mockResolvedValue(mockUIConfig);
+    vi.mocked(getUiConfig).mockResolvedValue(mockUIConfig);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 
@@ -78,7 +78,7 @@ describe("useUIConfig", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (getUiConfig as any).mockRejectedValue(testError);
+    vi.mocked(getUiConfig).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 
@@ -109,7 +109,7 @@ describe("useUIConfig", () => {
     };
 
     // Mock successful API call with different data
-    (getUiConfig as any).mockResolvedValue(alternativeUIConfig);
+    vi.mocked(getUiConfig).mockResolvedValue(alternativeUIConfig);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 
@@ -127,7 +127,7 @@ describe("useUIConfig", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (getUiConfig as any).mockRejectedValue(timeoutError);
+    vi.mocked(getUiConfig).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 
@@ -144,7 +144,7 @@ describe("useUIConfig", () => {
     const malformedError = new Error("Invalid JSON response");
 
     // Mock malformed response
-    (getUiConfig as any).mockRejectedValue(malformedError);
+    vi.mocked(getUiConfig).mockRejectedValue(malformedError);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 
@@ -159,7 +159,7 @@ describe("useUIConfig", () => {
 
   it("should use correct query key structure", async () => {
     // Mock successful API call
-    (getUiConfig as any).mockResolvedValue(mockUIConfig);
+    vi.mocked(getUiConfig).mockResolvedValue(mockUIConfig);
 
     const { result } = renderHook(() => useUIConfig(), { wrapper });
 

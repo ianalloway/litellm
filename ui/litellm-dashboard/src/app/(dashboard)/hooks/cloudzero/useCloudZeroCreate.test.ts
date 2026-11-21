@@ -28,7 +28,7 @@ vi.mock("@/components/networking", () => ({
 
 describe("useCloudZeroCreate", () => {
   let queryClient: QueryClient;
-  let fetchSpy: ReturnType<typeof vi.fn>;
+  const fetchSpy = vi.fn<typeof fetch>();
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -44,11 +44,12 @@ describe("useCloudZeroCreate", () => {
 
     vi.clearAllMocks();
 
-    fetchSpy = vi.fn();
-    global.fetch = fetchSpy;
+    fetchSpy.mockReset();
+    vi.stubGlobal("fetch", fetchSpy);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -63,10 +64,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should successfully create CloudZero integration with all parameters", async () => {
     const mockResponse = { message: "Integration created successfully", status: "success" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -97,10 +95,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should successfully create CloudZero integration with minimal parameters", async () => {
     const mockResponse = { message: "Integration created successfully", status: "success" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -128,10 +123,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should use default timezone when not provided", async () => {
     const mockResponse = { message: "Integration created successfully" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -143,16 +135,13 @@ describe("useCloudZeroCreate", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    const callBody = JSON.parse((fetchSpy as any).mock.calls[0][1].body);
+    const callBody = await new Request(...fetchSpy.mock.calls[0]).json();
     expect(callBody.timezone).toBe("UTC");
   });
 
   it("should not include api_key in body when not provided", async () => {
     const mockResponse = { message: "Integration created successfully" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -165,16 +154,13 @@ describe("useCloudZeroCreate", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    const callBody = JSON.parse((fetchSpy as any).mock.calls[0][1].body);
+    const callBody = await new Request(...fetchSpy.mock.calls[0]).json();
     expect(callBody).not.toHaveProperty("api_key");
   });
 
   it("should handle error response with error.message", async () => {
     const errorResponse = { error: { message: "Connection ID already exists" } };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -191,10 +177,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should handle error response with message field", async () => {
     const errorResponse = { message: "Invalid API key" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -211,10 +194,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should handle error response with detail field", async () => {
     const errorResponse = { detail: "Server error occurred" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -230,12 +210,7 @@ describe("useCloudZeroCreate", () => {
   });
 
   it("should handle error response with invalid JSON", async () => {
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => {
-        throw new Error("Invalid JSON");
-      },
-    });
+    fetchSpy.mockImplementation(async () => new Response("invalid JSON", { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -252,7 +227,7 @@ describe("useCloudZeroCreate", () => {
 
   it("should handle network error", async () => {
     const networkError = new Error("Network request failed");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 
@@ -283,7 +258,8 @@ describe("useCloudZeroCreate", () => {
   });
 
   it("should throw error when accessToken is null", async () => {
-    const { result } = renderHook(() => useCloudZeroCreate(null as any), { wrapper });
+    // @ts-expect-error Exercise the runtime guard for an invalid token from an untyped caller.
+    const { result } = renderHook(() => useCloudZeroCreate(null), { wrapper });
 
     result.current.mutate({
       connection_id: "test-connection-id",
@@ -300,10 +276,7 @@ describe("useCloudZeroCreate", () => {
   it("should use relative URL when proxyBaseUrl is not set", async () => {
     mockGetProxyBaseUrl.mockReturnValue("");
     const mockResponse = { message: "Success" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroCreate(mockAccessToken), { wrapper });
 

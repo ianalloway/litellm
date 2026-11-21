@@ -14,7 +14,7 @@ vi.mock("../common/queryKeysFactory", () => ({
   createQueryKeys: vi.fn((resource: string) => ({
     all: [resource],
     lists: () => [resource, "list"],
-    list: (params?: any) => [resource, "list", { params }],
+    list: (params?: unknown) => [resource, "list", { params }],
     details: () => [resource, "detail"],
     detail: (uid: string) => [resource, "detail", uid],
   })),
@@ -49,6 +49,7 @@ const buildUserListResponse = (page: number, totalPages: number, userCount = 2):
     spend: 0,
     max_budget: null,
     key_count: 0,
+    models: [],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     sso_user_id: null,
@@ -76,7 +77,7 @@ describe("useInfiniteUsers", () => {
 
   it("should return paginated user data when query is successful", async () => {
     const mockResponse = buildUserListResponse(1, 2);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(), { wrapper });
 
@@ -91,7 +92,7 @@ describe("useInfiniteUsers", () => {
 
   it("should use the default page size of 50", async () => {
     const mockResponse = buildUserListResponse(1, 1);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(), { wrapper });
 
@@ -105,7 +106,7 @@ describe("useInfiniteUsers", () => {
   it("should use a custom page size when provided", async () => {
     const customPageSize = 25;
     const mockResponse = buildUserListResponse(1, 1, 5);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(customPageSize), {
       wrapper,
@@ -121,7 +122,7 @@ describe("useInfiniteUsers", () => {
   it("should pass searchEmail to userListCall when provided", async () => {
     const searchEmail = "search@example.com";
     const mockResponse = buildUserListResponse(1, 1, 1);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(50, searchEmail), {
       wrapper,
@@ -136,7 +137,7 @@ describe("useInfiniteUsers", () => {
 
   it("should pass null for searchEmail when not provided", async () => {
     const mockResponse = buildUserListResponse(1, 1);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(50, undefined), {
       wrapper,
@@ -153,7 +154,7 @@ describe("useInfiniteUsers", () => {
     const page1 = buildUserListResponse(1, 3);
     const page2 = buildUserListResponse(2, 3);
     let callCount = 0;
-    (userListCall as any).mockImplementation(async () => {
+    vi.mocked(userListCall).mockImplementation(async () => {
       callCount++;
       return callCount === 1 ? page1 : page2;
     });
@@ -180,7 +181,7 @@ describe("useInfiniteUsers", () => {
 
   it("should not have a next page when on the last page", async () => {
     const lastPage = buildUserListResponse(2, 2);
-    (userListCall as any).mockResolvedValue(lastPage);
+    vi.mocked(userListCall).mockResolvedValue(lastPage);
 
     const { result } = renderHook(() => useInfiniteUsers(), { wrapper });
 
@@ -243,7 +244,7 @@ describe("useInfiniteUsers", () => {
         defaultOptions: { queries: { retry: false } },
       });
       const mockResponse = buildUserListResponse(1, 1);
-      (userListCall as any).mockResolvedValue(mockResponse);
+      vi.mocked(userListCall).mockResolvedValue(mockResponse);
       mockUseAuthorized.mockReturnValue({ ...DEFAULT_AUTH, userRole: role });
 
       const { result } = renderHook(() => useInfiniteUsers(), { wrapper });
@@ -258,7 +259,7 @@ describe("useInfiniteUsers", () => {
 
   it("should handle error when userListCall fails", async () => {
     const testError = new Error("Failed to fetch users");
-    (userListCall as any).mockRejectedValue(testError);
+    vi.mocked(userListCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useInfiniteUsers(), { wrapper });
 
@@ -272,7 +273,7 @@ describe("useInfiniteUsers", () => {
 
   it("should pass empty string searchEmail as null", async () => {
     const mockResponse = buildUserListResponse(1, 1);
-    (userListCall as any).mockResolvedValue(mockResponse);
+    vi.mocked(userListCall).mockResolvedValue(mockResponse);
 
     const { result } = renderHook(() => useInfiniteUsers(50, ""), {
       wrapper,

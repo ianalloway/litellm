@@ -40,7 +40,7 @@ describe("useUpdateUISettings", () => {
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render", () => {
-    (updateUiSettings as any).mockResolvedValue(mockUpdateUiSettingsResponse);
+    vi.mocked(updateUiSettings).mockResolvedValue(mockUpdateUiSettingsResponse);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -48,7 +48,7 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should update UI settings when mutation is successful", async () => {
-    (updateUiSettings as any).mockResolvedValue(mockUpdateUiSettingsResponse);
+    vi.mocked(updateUiSettings).mockResolvedValue(mockUpdateUiSettingsResponse);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -71,7 +71,7 @@ describe("useUpdateUISettings", () => {
     const errorMessage = "Failed to update UI settings";
     const testError = new Error(errorMessage);
 
-    (updateUiSettings as any).mockRejectedValue(testError);
+    vi.mocked(updateUiSettings).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -108,7 +108,8 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should throw error when accessToken is null", async () => {
-    const { result } = renderHook(() => useUpdateUISettings(null as any), { wrapper });
+    // @ts-expect-error Exercise the runtime guard for an invalid token from an untyped caller.
+    const { result } = renderHook(() => useUpdateUISettings(null), { wrapper });
 
     const settings = {
       disable_model_add_for_internal_users: true,
@@ -125,7 +126,7 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should invalidate uiSettings queries on success", async () => {
-    (updateUiSettings as any).mockResolvedValue(mockUpdateUiSettingsResponse);
+    vi.mocked(updateUiSettings).mockResolvedValue(mockUpdateUiSettingsResponse);
 
     queryClient.setQueryData(["uiSettings", "detail", "settings"], { values: {} });
 
@@ -147,7 +148,7 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should handle multiple settings updates", async () => {
-    (updateUiSettings as any).mockResolvedValue(mockUpdateUiSettingsResponse);
+    vi.mocked(updateUiSettings).mockResolvedValue(mockUpdateUiSettingsResponse);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -177,7 +178,7 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should handle empty settings object", async () => {
-    (updateUiSettings as any).mockResolvedValue(mockUpdateUiSettingsResponse);
+    vi.mocked(updateUiSettings).mockResolvedValue(mockUpdateUiSettingsResponse);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -193,7 +194,7 @@ describe("useUpdateUISettings", () => {
   it("should handle network timeout error", async () => {
     const timeoutError = new Error("Network timeout");
 
-    (updateUiSettings as any).mockRejectedValue(timeoutError);
+    vi.mocked(updateUiSettings).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
@@ -211,12 +212,12 @@ describe("useUpdateUISettings", () => {
   });
 
   it("should set isPending during mutation", async () => {
-    let resolvePromise: (value: any) => void;
-    const promise = new Promise((resolve) => {
+    let resolvePromise: (value: typeof mockUpdateUiSettingsResponse) => void;
+    const promise = new Promise<typeof mockUpdateUiSettingsResponse>((resolve) => {
       resolvePromise = resolve;
     });
 
-    (updateUiSettings as any).mockReturnValue(promise);
+    vi.mocked(updateUiSettings).mockReturnValue(promise);
 
     const { result } = renderHook(() => useUpdateUISettings("test-access-token"), { wrapper });
 
