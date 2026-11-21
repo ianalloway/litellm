@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState, useEffect } from "react";
 import { Button, Popconfirm, Modal, InputNumber, Space, Typography, Tag, Card, Tooltip, Divider } from "antd";
 import {
   ReloadOutlined,
@@ -65,20 +66,8 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   const [loadingSource, setLoadingSource] = useState(false);
 
   // Fetch status on component mount and periodically
-  useEffect(() => {
-    fetchReloadStatus();
-    fetchSourceInfo();
 
-    // Refresh status every 30 seconds to keep it up to date
-    const interval = setInterval(() => {
-      fetchReloadStatus();
-      fetchSourceInfo();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [accessToken]);
-
-  const fetchReloadStatus = async () => {
+  const fetchReloadStatus = useCallback(async () => {
     if (!accessToken) return;
 
     setLoadingStatus(true);
@@ -97,9 +86,9 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
     } finally {
       setLoadingStatus(false);
     }
-  };
+  }, [accessToken]);
 
-  const fetchSourceInfo = async () => {
+  const fetchSourceInfo = useCallback(async () => {
     if (!accessToken) return;
 
     setLoadingSource(true);
@@ -111,7 +100,21 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
     } finally {
       setLoadingSource(false);
     }
-  };
+  }, [accessToken]);
+
+  useDeferredRequest(fetchReloadStatus);
+  useDeferredRequest(fetchSourceInfo);
+
+  useEffect(() => {
+
+    // Refresh status every 30 seconds to keep it up to date
+    const interval = setInterval(() => {
+      fetchReloadStatus();
+      fetchSourceInfo();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [accessToken, fetchReloadStatus, fetchSourceInfo]);
 
   const handleHardRefresh = async () => {
     if (!accessToken) {

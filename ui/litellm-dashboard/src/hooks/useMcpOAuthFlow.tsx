@@ -119,8 +119,6 @@ export const useMcpOAuthFlow = ({
     return `${base}${rootPrefix}/ui/mcp/oauth/callback`;
   };
 
-  const callbackUrl = () => buildCallbackUrl();
-
   const startOAuthFlow = useCallback(async () => {
     const credentials = getCredentials() || {};
 
@@ -176,7 +174,7 @@ export const useMcpOAuthFlow = ({
       const authorizeUrl = buildMcpOAuthAuthorizeUrl({
         serverId,
         clientId: clientId,
-        redirectUri: callbackUrl(),
+        redirectUri: buildCallbackUrl(),
         state,
         codeChallenge: challenge,
         scope: scopeString,
@@ -188,7 +186,7 @@ export const useMcpOAuthFlow = ({
         clientId,
         clientSecret: registeredClient.clientSecret || credentials.client_secret,
         serverId,
-        redirectUri: callbackUrl(),
+        redirectUri: buildCallbackUrl(),
         flowSource,
       };
 
@@ -219,7 +217,7 @@ export const useMcpOAuthFlow = ({
       setError(message);
       NotificationsManager.error(message);
     }
-  }, [accessToken, getCredentials, getTemporaryPayload, onBeforeRedirect]);
+  }, [accessToken, flowSource, getCredentials, getTemporaryPayload, onBeforeRedirect]);
 
   const resumeOAuthFlow = useCallback(async () => {
     if (typeof window === "undefined") {
@@ -344,7 +342,7 @@ export const useMcpOAuthFlow = ({
         }, 1000);
       }
     }
-  }, [onTokenReceived]);
+  }, [accessToken, flowSource, onTokenReceived]);
 
   useEffect(() => {
     resumeOAuthFlow();

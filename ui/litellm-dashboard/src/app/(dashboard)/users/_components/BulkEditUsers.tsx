@@ -66,7 +66,7 @@ const BulkEditUserModal: React.FC<BulkEditUserModalProps> = ({
       keys: [],
       teams: teams || [],
     }),
-    [teams, open],
+    [teams],
   );
 
   const handleSubmit = async (formValues: any) => {

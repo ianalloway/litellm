@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Button,
   Card,
@@ -44,7 +44,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ accessToken, userRole, teams 
 
   const isAdmin = userRole ? isAdminRole(userRole) : false;
 
-  const fetchAgents = async (healthCheck?: boolean) => {
+  const fetchAgents = useCallback(async (healthCheck?: boolean) => {
     if (!accessToken) {
       return;
     }
@@ -58,15 +58,14 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ accessToken, userRole, teams 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, healthCheckEnabled]);
 
   useEffect(() => {
     fetchAgents();
-  }, [accessToken]);
+  }, [accessToken, fetchAgents]);
 
   const handleHealthCheckToggle = (checked: boolean) => {
     setHealthCheckEnabled(checked);
-    fetchAgents(checked);
   };
 
   const handleAddAgent = () => {

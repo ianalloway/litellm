@@ -1,3 +1,4 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import {
   BarChart,
   BarList,
@@ -12,7 +13,7 @@ import {
   Subtitle,
 } from "@tremor/react";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 
 import ViewUserSpend from "@/components/view_user_spend";
 import { ProxySettings } from "@/components/user_dashboard";
@@ -131,6 +132,86 @@ const isAdminOrAdminViewer = (role: string | null): boolean => {
   return role === "Admin" || role === "Admin Viewer";
 };
 
+const fetchAndSetData = async (
+  fetchFunction: () => Promise<any>,
+  setStateFunction: React.Dispatch<React.SetStateAction<any>>,
+  errorMessage: string,
+) => {
+  try {
+    const data = await fetchFunction();
+    setStateFunction(data);
+  } catch (error) {
+    console.error(errorMessage, error);
+    // Optionally, update UI to reflect error state for this specific data
+  }
+};
+
+// Update the fillMissingDates function to handle different date formats
+const fillMissingDates = (data: any[], startDate: Date, endDate: Date, categories: string[]) => {
+  const filledData = [];
+  const currentDate = new Date(startDate);
+
+  // Helper function to standardize date format
+  const standardizeDate = (dateStr: string) => {
+    if (dateStr.includes("-")) {
+      // Already in YYYY-MM-DD format
+      return dateStr;
+    } else {
+      // Convert "Jan 06" format
+      const [month, day] = dateStr.split(" ");
+      const year = new Date().getFullYear();
+      const monthIndex = new Date(`${month} 01 2024`).getMonth();
+      const fullDate = new Date(year, monthIndex, parseInt(day));
+      return fullDate.toISOString().split("T")[0];
+    }
+  };
+
+  // Create a map of existing dates for quick lookup
+  const existingDates = new Map(
+    data.map((item) => {
+      const standardizedDate = standardizeDate(item.date);
+      return [
+        standardizedDate,
+        {
+          ...item,
+          date: standardizedDate, // Store standardized date format
+        },
+      ];
+    }),
+  );
+
+  // Iterate through each date in the range
+  while (currentDate <= endDate) {
+    const dateStr = currentDate.toISOString().split("T")[0];
+
+    if (existingDates.has(dateStr)) {
+      // Use existing data if we have it
+      filledData.push(existingDates.get(dateStr));
+    } else {
+      // Create an entry with zero values
+      const emptyEntry: any = {
+        date: dateStr,
+        api_requests: 0,
+        total_tokens: 0,
+      };
+
+      // Add zero values for each model/team if needed
+      categories.forEach((category) => {
+        if (!emptyEntry[category]) {
+          emptyEntry[category] = 0;
+        }
+      });
+
+      filledData.push(emptyEntry);
+    }
+
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return filledData;
+};
+
 const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, userID, keys, premiumUser }) => {
   const currentDate = new Date();
   const [keySpendData, setKeySpendData] = useState<any[]>([]);
@@ -170,7 +251,7 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     return formatter.format(number);
   }
 
-  const fetchProxySettings = async () => {
+  const fetchProxySettings = useCallback(async () => {
     if (accessToken) {
       try {
         const proxy_settings: ProxySettings = await getProxyUISettings(accessToken);
@@ -179,11 +260,8 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
         console.error("Error fetching proxy settings:", error);
       }
     }
-  };
+  }, [accessToken]);
 
-  useEffect(() => {
-    updateTagSpendData(dateValue.from, dateValue.to);
-  }, [dateValue, selectedTags]);
 
   const updateEndUserData = async (
     startTime: Date | undefined,
@@ -203,7 +281,8 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     setTopUsers(newTopUserData);
   };
 
-  const updateTagSpendData = async (startTime: Date | undefined, endTime: Date | undefined) => {
+  const updateTagSpendData = useCallback(async () => {
+    const { from: startTime, to: endTime } = dateValue;
     if (!startTime || !endTime || !accessToken) {
       return;
     }
@@ -222,7 +301,9 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
       selectedTags.length === 0 ? undefined : selectedTags,
     );
     setTopTagsData(top_tags.spend_per_tag);
-  };
+  }, [accessToken, fetchProxySettings, selectedTags, setTopTagsData, dateValue]);
+
+  useDeferredRequest(updateTagSpendData);
 
   function formatDate(date: Date) {
     const year = date.getFullYear();
@@ -238,88 +319,8 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
 
   const valueFormatter = (number: number) => `$ ${formatNumberWithCommas(number, 2)}`;
 
-  const fetchAndSetData = async (
-    fetchFunction: () => Promise<any>,
-    setStateFunction: React.Dispatch<React.SetStateAction<any>>,
-    errorMessage: string,
-  ) => {
-    try {
-      const data = await fetchFunction();
-      setStateFunction(data);
-    } catch (error) {
-      console.error(errorMessage, error);
-      // Optionally, update UI to reflect error state for this specific data
-    }
-  };
-
-  // Update the fillMissingDates function to handle different date formats
-  const fillMissingDates = (data: any[], startDate: Date, endDate: Date, categories: string[]) => {
-    const filledData = [];
-    const currentDate = new Date(startDate);
-
-    // Helper function to standardize date format
-    const standardizeDate = (dateStr: string) => {
-      if (dateStr.includes("-")) {
-        // Already in YYYY-MM-DD format
-        return dateStr;
-      } else {
-        // Convert "Jan 06" format
-        const [month, day] = dateStr.split(" ");
-        const year = new Date().getFullYear();
-        const monthIndex = new Date(`${month} 01 2024`).getMonth();
-        const fullDate = new Date(year, monthIndex, parseInt(day));
-        return fullDate.toISOString().split("T")[0];
-      }
-    };
-
-    // Create a map of existing dates for quick lookup
-    const existingDates = new Map(
-      data.map((item) => {
-        const standardizedDate = standardizeDate(item.date);
-        return [
-          standardizedDate,
-          {
-            ...item,
-            date: standardizedDate, // Store standardized date format
-          },
-        ];
-      }),
-    );
-
-    // Iterate through each date in the range
-    while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split("T")[0];
-
-      if (existingDates.has(dateStr)) {
-        // Use existing data if we have it
-        filledData.push(existingDates.get(dateStr));
-      } else {
-        // Create an entry with zero values
-        const emptyEntry: any = {
-          date: dateStr,
-          api_requests: 0,
-          total_tokens: 0,
-        };
-
-        // Add zero values for each model/team if needed
-        categories.forEach((category) => {
-          if (!emptyEntry[category]) {
-            emptyEntry[category] = 0;
-          }
-        });
-
-        filledData.push(emptyEntry);
-      }
-
-      // Move to next day
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return filledData;
-  };
-
   // Update the fetchOverallSpend function
-  const fetchOverallSpend = async () => {
+  const fetchOverallSpend = useCallback(async () => {
     if (!accessToken) {
       return;
     }
@@ -342,9 +343,9 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     } catch (error) {
       console.error("Error fetching overall spend:", error);
     }
-  };
+  }, [accessToken, setTotalMonthlySpend, setKeySpendData]);
 
-  const fetchProviderSpend = () =>
+  const fetchProviderSpend = useCallback(() =>
     fetchAndSetData(
       () =>
         accessToken && token
@@ -352,9 +353,9 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
           : Promise.reject("No access token or token"),
       setSpendByProvider,
       "Error fetching provider spend",
-    );
+    ), [accessToken, endTime, startTime, token, setSpendByProvider]);
 
-  const fetchTopKeys = async () => {
+  const fetchTopKeys = useCallback(async () => {
     if (!accessToken) return;
     await fetchAndSetData(
       async () => {
@@ -369,9 +370,9 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
       setTopKeys,
       "Error fetching top keys",
     );
-  };
+  }, [accessToken, setTopKeys]);
 
-  const fetchTopModels = async () => {
+  const fetchTopModels = useCallback(async () => {
     if (!accessToken) return;
     await fetchAndSetData(
       async () => {
@@ -384,10 +385,10 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
       setTopModels,
       "Error fetching top models",
     );
-  };
+  }, [accessToken, setTopModels]);
 
   // Update the fetchTeamSpend function
-  const fetchTeamSpend = async () => {
+  const fetchTeamSpend = useCallback(async () => {
     if (!accessToken) return;
     await fetchAndSetData(
       async () => {
@@ -411,9 +412,9 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
       setTotalSpendPerTeam,
       "Error fetching team spend",
     );
-  };
+  }, [accessToken, setTeamSpendData, setUniqueTeamIds, setTotalSpendPerTeam]);
 
-  const fetchTagNames = () => {
+  const fetchTagNames = useCallback(() => {
     if (!accessToken) return;
     fetchAndSetData(
       async () => {
@@ -423,28 +424,28 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
       setAllTagNames,
       "Error fetching tag names",
     );
-  };
+  }, [accessToken, setAllTagNames]);
 
-  const fetchTopTags = () => {
+  const fetchTopTags = useCallback(() => {
     if (!accessToken) return;
     fetchAndSetData(
       () => tagsSpendLogsCall(accessToken, dateValue.from?.toISOString(), dateValue.to?.toISOString(), undefined),
       (data) => setTopTagsData(data.spend_per_tag),
       "Error fetching top tags",
     );
-  };
+  }, [accessToken, dateValue.from, dateValue.to, setTopTagsData]);
 
-  const fetchTopEndUsers = () => {
+  const fetchTopEndUsers = useCallback(() => {
     if (!accessToken) return;
     fetchAndSetData(
       () => adminTopEndUsersCall(accessToken, null, undefined, undefined),
       setTopUsers,
       "Error fetching top end users",
     );
-  };
+  }, [accessToken, setTopUsers]);
 
   // Update the fetchGlobalActivity function
-  const fetchGlobalActivity = async () => {
+  const fetchGlobalActivity = useCallback(async () => {
     if (!accessToken) return;
     try {
       const data = await adminGlobalActivity(accessToken, startTime, endTime);
@@ -467,10 +468,10 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     } catch (error) {
       console.error("Error fetching global activity:", error);
     }
-  };
+  }, [accessToken, endTime, startTime, setGlobalActivity]);
 
   // Update the fetchGlobalActivityPerModel function
-  const fetchGlobalActivityPerModel = async () => {
+  const fetchGlobalActivityPerModel = useCallback(async () => {
     if (!accessToken) return;
     try {
       const data = await adminGlobalActivityPerModel(accessToken, startTime, endTime);
@@ -490,7 +491,7 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     } catch (error) {
       console.error("Error fetching global activity per model:", error);
     }
-  };
+  }, [accessToken, endTime, startTime, setGlobalActivityPerModel]);
 
   useEffect(() => {
     const initlizeUsageData = async () => {
@@ -520,7 +521,7 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
     };
 
     initlizeUsageData();
-  }, [accessToken, token, userRole, userID, startTime, endTime]);
+  }, [accessToken, token, userRole, userID, startTime, endTime, fetchProxySettings, fetchOverallSpend, fetchProviderSpend, fetchTopKeys, fetchTopModels, fetchGlobalActivity, fetchGlobalActivityPerModel, fetchTeamSpend, fetchTagNames, fetchTopTags, fetchTopEndUsers]);
 
   if (proxySettings?.DISABLE_EXPENSIVE_DB_QUERIES) {
     return (
@@ -834,10 +835,7 @@ const UsagePage: React.FC<UsagePageProps> = ({ accessToken, token, userRole, use
                 <UsageDatePicker
                   className="mb-4"
                   value={dateValue}
-                  onValueChange={(value) => {
-                    setDateValue(value);
-                    updateTagSpendData(value.from, value.to);
-                  }}
+                  onValueChange={setDateValue}
                 />
               </Col>
 

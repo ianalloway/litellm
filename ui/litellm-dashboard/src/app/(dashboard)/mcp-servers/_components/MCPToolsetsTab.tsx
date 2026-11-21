@@ -168,7 +168,7 @@ function CreateToolsetModal({ open, onClose, onSave, accessToken, initialToolset
       setSelectedTools(initialToolset?.tools || []);
       setServerSearch("");
     }
-  }, [open, initialToolset]);
+  }, [open, initialToolset, form]);
 
   const handleToggleTool = (tool: MCPToolsetTool) => {
     setSelectedTools((prev) => {

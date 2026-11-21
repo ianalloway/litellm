@@ -114,41 +114,32 @@ const CacheDashboard: React.FC<CachePageProps> = ({ accessToken, token, userRole
   const [lastRefreshed, setLastRefreshed] = useState("");
   const [healthCheckResponse, setHealthCheckResponse] = useState<any>("");
 
-  useEffect(() => {
-    if (!accessToken || !dateValue) {
-      return;
-    }
-    const fetchData = async () => {
-      const response = await adminGlobalCacheActivity(
-        accessToken,
-        formatDateWithoutTZ(dateValue.from),
-        formatDateWithoutTZ(dateValue.to),
-      );
-      setData(response);
-    };
-    fetchData();
+  const startDate = formatDateWithoutTZ(dateValue.from);
+  const endDate = formatDateWithoutTZ(dateValue.to);
+  const [refreshCount, setRefreshCount] = useState(0);
 
-    const currentDate = new Date();
-    setLastRefreshed(currentDate.toLocaleString());
-  }, [accessToken]);
+  useEffect(() => {
+    if (!accessToken || !startDate || !endDate) return;
+
+    let active = true;
+    const fetchData = async () => {
+      try {
+        const response = await adminGlobalCacheActivity(accessToken, startDate, endDate);
+        if (active) {
+          setData(response);
+          setLastRefreshed(new Date().toLocaleString());
+        }
+      } catch {
+        if (active) NotificationsManager.fromBackend("Failed to load cache activity");
+      }
+    };
+    void fetchData();
+    return () => { active = false; };
+  }, [accessToken, startDate, endDate, refreshCount]);
 
   const uniqueApiKeys = Array.from(new Set(data.map((item) => item?.api_key ?? "")));
   const uniqueModels = Array.from(new Set(data.map((item) => item?.model ?? "")));
   const uniqueCallTypes = Array.from(new Set(data.map((item) => item?.call_type ?? "")));
-
-  const updateCachingData = async (startTime: Date | undefined, endTime: Date | undefined) => {
-    if (!startTime || !endTime || !accessToken) {
-      return;
-    }
-
-    let new_cache_data = await adminGlobalCacheActivity(
-      accessToken,
-      formatDateWithoutTZ(startTime),
-      formatDateWithoutTZ(endTime),
-    );
-
-    setData(new_cache_data);
-  };
 
   useEffect(() => {
     let newData: cacheDataItem[] = data;
@@ -224,12 +215,6 @@ const CacheDashboard: React.FC<CachePageProps> = ({ accessToken, token, userRole
     setFilteredData(processedData);
   }, [selectedApiKeys, selectedModels, dateValue, data]);
 
-  const handleRefreshClick = () => {
-    // Update the 'lastRefreshed' state to the current date and time
-    const currentDate = new Date();
-    setLastRefreshed(currentDate.toLocaleString());
-  };
-
   const runCachingHealthCheck = async () => {
     try {
       NotificationsManager.info("Running cache health check...");
@@ -270,13 +255,9 @@ const CacheDashboard: React.FC<CachePageProps> = ({ accessToken, token, userRole
 
         <div className="flex items-center space-x-2">
           {lastRefreshed && <Text>Last Refreshed: {lastRefreshed}</Text>}
-          <Icon
-            icon={RefreshIcon} // Modify as necessary for correct icon name
-            variant="shadow"
-            size="xs"
-            className="self-center"
-            onClick={handleRefreshClick}
-          />
+          <button type="button" aria-label="Refresh cache activity" onClick={() => setRefreshCount((count) => count + 1)}>
+            <Icon icon={RefreshIcon} variant="shadow" size="xs" className="self-center" />
+          </button>
         </div>
       </TabList>
       <TabPanels>
@@ -306,13 +287,7 @@ const CacheDashboard: React.FC<CachePageProps> = ({ accessToken, token, userRole
                 </MultiSelect>
               </Col>
               <Col>
-                <UsageDatePicker
-                  value={dateValue}
-                  onValueChange={(value) => {
-                    setDateValue(value);
-                    updateCachingData(value.from, value.to);
-                  }}
-                />
+                <UsageDatePicker value={dateValue} onValueChange={setDateValue} />
               </Col>
             </Grid>
 

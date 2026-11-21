@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Form, Input, InputNumber, Select } from "antd";
 import { TextInput } from "@tremor/react";
 import { InfoCircleOutlined } from "@ant-design/icons";
@@ -96,45 +96,54 @@ const getFieldHelp = (key: string, property: SchemaProperty, type: string): stri
   return helpText;
 };
 
+const noExcludedFields: string[] = [];
+
 const SchemaFormFields: React.FC<SchemaFormFieldsProps> = ({
   schemaComponent,
-  excludedFields = [],
+  excludedFields = noExcludedFields,
   form,
   overrideLabels = {},
   overrideTooltips = {},
   customValidation = {},
   defaultValues = {},
 }) => {
+  const initialValues = useRef(defaultValues);
+  useEffect(() => { initialValues.current = defaultValues; }, [defaultValues]);
   const [schemaProperties, setSchemaProperties] = useState<OpenAPISchema | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const fetchOpenAPISchema = async () => {
       try {
         const schema = await getOpenAPISchema();
+        if (!active) return;
         const componentSchema = schema.components.schemas[schemaComponent];
 
         if (!componentSchema) {
           throw new Error(`Schema component "${schemaComponent}" not found`);
         }
 
+        setError(null);
         setSchemaProperties(componentSchema);
 
         const defaultFormValues: { [key: string]: any } = {};
         Object.keys(componentSchema.properties)
-          .filter((key) => !excludedFields.includes(key) && defaultValues[key] !== undefined)
+          .filter((key) => !excludedFields.includes(key) && initialValues.current[key] !== undefined)
           .forEach((key) => {
-            defaultFormValues[key] = defaultValues[key];
+            defaultFormValues[key] = initialValues.current[key];
           });
 
         form.setFieldsValue(defaultFormValues);
       } catch (error) {
+        if (!active) return;
         console.error("Schema fetch error:", error);
         setError(error instanceof Error ? error.message : "Failed to fetch schema");
       }
     };
 
     fetchOpenAPISchema();
+    return () => { active = false; };
   }, [schemaComponent, form, excludedFields]);
 
   const getPropertyType = (property: SchemaProperty): string => {

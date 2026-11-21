@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 
 import { Button } from "@tremor/react";
 import { Modal, Select } from "antd";
@@ -30,7 +30,7 @@ const PromptsPanel: React.FC<PromptsProps> = ({ accessToken, userRole }) => {
   // Admin Viewer follows the read-parity rule: see prompts, no writes.
   const canModify = userRole ? isProxyAdminRole(userRole) : false;
 
-  const fetchPrompts = async () => {
+  const fetchPrompts = useCallback(async () => {
     if (!accessToken) {
       setIsLoading(false);
       return;
@@ -45,11 +45,11 @@ const PromptsPanel: React.FC<PromptsProps> = ({ accessToken, userRole }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, selectedEnvironment]);
 
   useEffect(() => {
     fetchPrompts();
-  }, [accessToken, selectedEnvironment]);
+  }, [accessToken, fetchPrompts, selectedEnvironment]);
 
   const handlePromptClick = (promptId: string) => {
     setSelectedPromptId(promptId);

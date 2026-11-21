@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Modal, Form, Steps, Button, Checkbox } from "antd";
 import { Text, Title, Badge } from "@tremor/react";
 import { makeMCPPublicCall } from "../../networking";
@@ -69,9 +69,13 @@ const MakeMCPPublicForm: React.FC<MakeMCPPublicFormProps> = ({
     }
   };
 
+  const preselected = useRef(false);
+
   // Initialize and preselect already public servers when modal opens
   useEffect(() => {
-    if (visible && mcpHubData.length > 0) {
+    if (!visible) preselected.current = false;
+    if (visible && !preselected.current && mcpHubData.length > 0) {
+      preselected.current = true;
       // Extract server IDs from servers that are already public
       const publicServerIds = mcpHubData
         .filter((server) => server.mcp_info?.is_public === true)
@@ -80,7 +84,7 @@ const MakeMCPPublicForm: React.FC<MakeMCPPublicFormProps> = ({
       // Preselect servers that are already public
       setSelectedServers(new Set(publicServerIds));
     }
-  }, [visible]); // Only re-run when modal visibility changes, not when mcpHubData updates
+  }, [visible, mcpHubData]);
 
   const handleSubmit = async () => {
     if (selectedServers.size === 0) {

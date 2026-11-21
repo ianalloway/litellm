@@ -29,7 +29,6 @@ const PromptCodeSnippets: React.FC<PromptCodeSnippetsProps> = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<"curl" | "python" | "javascript">("curl");
   const [selectedTab, setSelectedTab] = useState("basic");
-  const [generatedCode, setGeneratedCode] = useState("");
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -225,12 +224,7 @@ main();`;
     }
   };
 
-  // Update generated code when language, tab or props change
-  React.useEffect(() => {
-    if (isModalVisible) {
-      setGeneratedCode(generateCode());
-    }
-  }, [isModalVisible, selectedLanguage, selectedTab, promptId, model, promptVariables]);
+  const generatedCode = isModalVisible ? generateCode() : "";
 
   return (
     <>

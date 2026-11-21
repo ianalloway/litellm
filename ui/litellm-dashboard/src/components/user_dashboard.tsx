@@ -178,10 +178,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           }
         };
         fetchData();
-        fetchTeams(accessToken, userID, userRole, currentOrg, setTeams);
       }
     }
-  }, [userID, token, accessToken, userRole]);
+  }, [userID, token, accessToken, userRole, setUserEmail, setUserRole, userSpendData]);
 
   useEffect(() => {
     // check key health - if it's invalid, redirect to login
@@ -203,7 +202,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
     if (accessToken) {
       fetchTeams(accessToken, userID, userRole, currentOrg, setTeams);
     }
-  }, [currentOrg]);
+  }, [accessToken, currentOrg, setTeams, userID, userRole]);
 
   useEffect(() => {
     // This code will run every time selectedTeam changes
@@ -223,7 +222,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       }
       setTeamSpend(sum);
     }
-  }, [selectedTeam]);
+  }, [keys, selectedTeam]);
 
   function gotoLogin() {
     // Clear token cookies using the utility function

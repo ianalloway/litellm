@@ -716,7 +716,7 @@ const CreateMCPServer: React.FC<CreateMCPServerProps> = ({
       form.setFieldsValue({ alias: normalized });
       setFormValues((prev) => ({ ...prev, alias: normalized }));
     }
-  }, [formValues.server_name]);
+  }, [aliasManuallyEdited, form, formValues.server_name]);
 
   // Clear form, tools, and OAuth state when the modal closes so a previous server's
   // authorization, credentials, or tool list never bleed into the next "Add New MCP

@@ -1,5 +1,5 @@
 import { Setter } from "@/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { keyListCall, Member, Organization } from "../networking";
 
 export interface Team {
@@ -167,7 +167,8 @@ const useKeyList = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKeys = async (params: Record<string, unknown> = {}): Promise<void> => {
+  const expandedFields = expand.join(",");
+  const fetchKeys = useCallback(async (params: Record<string, unknown> = {}): Promise<void> => {
     try {
       if (!accessToken) {
         return;
@@ -188,7 +189,7 @@ const useKeyList = ({
         pageSize,
         null,
         null,
-        expand.join(","),
+        expandedFields,
       );
       setKeyData(data);
       setError(null);
@@ -197,11 +198,11 @@ const useKeyList = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, expandedFields]);
 
   useEffect(() => {
     fetchKeys();
-  }, [selectedTeam, currentOrg, accessToken, selectedKeyAlias, createClicked]);
+  }, [selectedTeam, currentOrg, accessToken, selectedKeyAlias, createClicked, fetchKeys]);
 
   const setKeys = (newKeysOrUpdater: KeyResponse[] | ((prevKeys: KeyResponse[]) => KeyResponse[])) => {
     setKeyData((prevData) => {

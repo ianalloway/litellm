@@ -185,7 +185,7 @@ const MCPToolConfiguration: React.FC<MCPToolConfigurationProps> = ({
   // Tool list is fetched by the parent (create/edit flow) and passed in. This
   // component renders that state; it never fetches on its own, so there is a
   // single source of truth and no risk of falling back to a different endpoint.
-  const tools: ToolEntry[] = externalTools ?? [];
+  const tools: ToolEntry[] = useMemo(() => externalTools ?? [], [externalTools]);
   const isLoadingTools = externalIsLoading ?? false;
   const toolsError = externalError ?? null;
   const canFetchTools = externalCanFetch ?? false;

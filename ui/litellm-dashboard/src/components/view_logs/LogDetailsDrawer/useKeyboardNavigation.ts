@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { LogEntry } from "../columns";
 import { KEY_ESCAPE, KEY_J_LOWER, KEY_J_UPPER, KEY_K_LOWER, KEY_K_UPPER } from "./constants";
 
@@ -26,6 +26,24 @@ export function useKeyboardNavigation({
   onClose,
   onSelectLog,
 }: UseKeyboardNavigationProps) {
+  const selectNextLog = useCallback(() => {
+    if (!currentLog || !allLogs.length || !onSelectLog) return;
+
+    const currentIndex = allLogs.findIndex((l) => l.request_id === currentLog.request_id);
+    if (currentIndex >= 0 && currentIndex < allLogs.length - 1) {
+      onSelectLog(allLogs[currentIndex + 1]);
+    }
+  }, [currentLog, allLogs, onSelectLog]);
+
+  const selectPreviousLog = useCallback(() => {
+    if (!currentLog || !allLogs.length || !onSelectLog) return;
+
+    const currentIndex = allLogs.findIndex((l) => l.request_id === currentLog.request_id);
+    if (currentIndex > 0) {
+      onSelectLog(allLogs[currentIndex - 1]);
+    }
+  }, [currentLog, allLogs, onSelectLog]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
@@ -52,25 +70,7 @@ export function useKeyboardNavigation({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, currentLog, allLogs]);
-
-  const selectNextLog = () => {
-    if (!currentLog || !allLogs.length || !onSelectLog) return;
-
-    const currentIndex = allLogs.findIndex((l) => l.request_id === currentLog.request_id);
-    if (currentIndex < allLogs.length - 1) {
-      onSelectLog(allLogs[currentIndex + 1]);
-    }
-  };
-
-  const selectPreviousLog = () => {
-    if (!currentLog || !allLogs.length || !onSelectLog) return;
-
-    const currentIndex = allLogs.findIndex((l) => l.request_id === currentLog.request_id);
-    if (currentIndex > 0) {
-      onSelectLog(allLogs[currentIndex - 1]);
-    }
-  };
+  }, [isOpen, onClose, selectNextLog, selectPreviousLog]);
 
   return {
     selectNextLog,

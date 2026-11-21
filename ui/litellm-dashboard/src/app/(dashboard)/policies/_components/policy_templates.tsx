@@ -188,7 +188,7 @@ const PolicyTemplates: React.FC<PolicyTemplatesProps> = ({
     };
 
     fetchTemplates();
-  }, [accessToken]);
+  }, [accessToken, onTemplatesLoaded]);
 
   if (isLoading) {
     return (

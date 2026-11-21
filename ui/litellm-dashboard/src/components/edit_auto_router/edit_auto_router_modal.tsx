@@ -93,8 +93,6 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [modelAccessGroups, setModelAccessGroups] = useState<string[]>([]);
   const [modelInfo, setModelInfo] = useState<ModelGroup[]>([]);
-  const [showCustomDefaultModel, setShowCustomDefaultModel] = useState<boolean>(false);
-  const [showCustomEmbeddingModel, setShowCustomEmbeddingModel] = useState<boolean>(false);
   const [routerConfig, setRouterConfig] = useState<any>(null);
   const [customTechnicalKeywords, setCustomTechnicalKeywords] = useState<string[]>([]);
   const [complexityRouterConfig, setComplexityRouterConfig] = useState<ComplexityRouterConfigValue>({
@@ -103,11 +101,6 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
   });
   const isComplexityRouter = isComplexityRouterModel(modelData);
 
-  useEffect(() => {
-    if (isVisible && modelData) {
-      initializeForm();
-    }
-  }, [isVisible, modelData]);
 
   useEffect(() => {
     const fetchModelAccessGroups = async () => {
@@ -136,69 +129,63 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
     }
   }, [isVisible, accessToken]);
 
-  const initializeForm = () => {
-    try {
-      if (isComplexityRouterModel(modelData)) {
-        // Parse the complexity_router_config if it exists and is a string
-        let parsedConfig = modelData.litellm_params?.complexity_router_config || {};
-        if (typeof parsedConfig === "string") {
-          parsedConfig = JSON.parse(parsedConfig);
-        }
-
-        setComplexityRouterConfig({
-          tiers: {
-            SIMPLE: normalizeTierModels(parsedConfig.tiers?.SIMPLE),
-            MEDIUM: normalizeTierModels(parsedConfig.tiers?.MEDIUM),
-            COMPLEX: normalizeTierModels(parsedConfig.tiers?.COMPLEX),
-            REASONING: normalizeTierModels(parsedConfig.tiers?.REASONING),
-          },
-          classifier_type: parsedConfig.classifier_type || "heuristic",
-          classifier_llm_config: parsedConfig.classifier_llm_config,
-          adaptive: parsedConfig.adaptive || false,
-          adaptive_weights: parsedConfig.adaptive_weights,
-          tier_distance_penalty: parsedConfig.tier_distance_penalty,
-          adaptive_eligible: parsedConfig.adaptive_eligible || "all",
-        });
-        setCustomTechnicalKeywords(
-          Array.isArray(parsedConfig.custom_technical_keywords) ? parsedConfig.custom_technical_keywords : [],
-        );
-
-        form.setFieldsValue({
-          auto_router_name: modelData.model_name,
-          model_access_group: modelData.model_info?.access_groups || [],
-        });
-        return;
-      }
-
-      // Parse the auto_router_config if it exists and is a string
-      let parsedConfig = null;
-      if (modelData.litellm_params?.auto_router_config) {
-        if (typeof modelData.litellm_params.auto_router_config === "string") {
-          parsedConfig = JSON.parse(modelData.litellm_params.auto_router_config);
+  // Refresh the draft on open or when the parent selects a different model.
+  const [configError, setConfigError] = useState(false);
+  const [draftSource, setDraftSource] = useState<typeof modelData>(null);
+  const source = isVisible ? modelData : null;
+  if (source !== draftSource) {
+    setDraftSource(source);
+    if (source) {
+      try {
+        if (isComplexityRouter) {
+          const stored = source.litellm_params?.complexity_router_config || {};
+          const parsed = typeof stored === "string" ? JSON.parse(stored) : stored;
+          setComplexityRouterConfig({
+            tiers: {
+              SIMPLE: normalizeTierModels(parsed.tiers?.SIMPLE),
+              MEDIUM: normalizeTierModels(parsed.tiers?.MEDIUM),
+              COMPLEX: normalizeTierModels(parsed.tiers?.COMPLEX),
+              REASONING: normalizeTierModels(parsed.tiers?.REASONING),
+            },
+            classifier_type: parsed.classifier_type || "heuristic",
+            classifier_llm_config: parsed.classifier_llm_config,
+            adaptive: parsed.adaptive || false,
+            adaptive_weights: parsed.adaptive_weights,
+            tier_distance_penalty: parsed.tier_distance_penalty,
+            adaptive_eligible: parsed.adaptive_eligible || "all",
+          });
+          setCustomTechnicalKeywords(Array.isArray(parsed.custom_technical_keywords) ? parsed.custom_technical_keywords : []);
         } else {
-          parsedConfig = modelData.litellm_params.auto_router_config;
+          const stored = source.litellm_params?.auto_router_config;
+          setRouterConfig(typeof stored === "string" ? JSON.parse(stored) : stored ?? null);
         }
+        setConfigError(false);
+      } catch {
+        setConfigError(true);
       }
-
-      setRouterConfig(parsedConfig);
-
-      // Set form values
-      form.setFieldsValue({
-        auto_router_name: modelData.model_name,
-        auto_router_default_model: modelData.litellm_params?.auto_router_default_model || "",
-        auto_router_embedding_model: modelData.litellm_params?.auto_router_embedding_model || "",
-        model_access_group: modelData.model_info?.access_groups || [],
-      });
-
-      // Check if using custom models
-      const allModelGroups = new Set(modelInfo.map((model) => model.model_group));
-      setShowCustomDefaultModel(!allModelGroups.has(modelData.litellm_params?.auto_router_default_model));
-      setShowCustomEmbeddingModel(!allModelGroups.has(modelData.litellm_params?.auto_router_embedding_model));
-    } catch (error) {
-      console.error("Error parsing auto router config:", error);
-      NotificationsManager.fromBackend("Error loading auto router configuration");
     }
-  };
+  }
+
+  useEffect(() => {
+    if (!source) return;
+    if (configError) {
+      NotificationsManager.fromBackend("Error loading auto router configuration");
+      return;
+    }
+    const fields = {
+      auto_router_name: source.model_name,
+      model_access_group: source.model_info?.access_groups ?? [],
+    };
+    if (isComplexityRouter) {
+      form.setFieldsValue(fields);
+    } else {
+      form.setFieldsValue({
+        ...fields,
+        auto_router_default_model: source.litellm_params?.auto_router_default_model || "",
+        auto_router_embedding_model: source.litellm_params?.auto_router_embedding_model || "",
+      });
+    }
+  }, [source, configError, form, isComplexityRouter]);
 
   const handleSubmit = async () => {
     try {
@@ -358,9 +345,6 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
               >
                 <AntdSelect
                   placeholder="Select a default model"
-                  onChange={(value) => {
-                    setShowCustomDefaultModel(value === "custom");
-                  }}
                   options={[...modelOptions, { value: "custom", label: "Enter custom model name" }]}
                   showSearch={true}
                 />
@@ -370,9 +354,6 @@ const EditAutoRouterModal: React.FC<EditAutoRouterModalProps> = ({
               <Form.Item label="Embedding Model" name="auto_router_embedding_model">
                 <AntdSelect
                   placeholder="Select an embedding model (optional)"
-                  onChange={(value) => {
-                    setShowCustomEmbeddingModel(value === "custom");
-                  }}
                   options={[...modelOptions, { value: "custom", label: "Enter custom model name" }]}
                   showSearch={true}
                   allowClear

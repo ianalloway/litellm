@@ -592,6 +592,11 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
     NotificationsManager.success("Virtual Key copied to clipboard");
   };
 
+  const pendingModelPrefill = React.useRef(pendingPrefillModels);
+  useEffect(() => {
+    pendingModelPrefill.current = pendingPrefillModels;
+  }, [pendingPrefillModels]);
+
   // Fetch available models when team or auth changes.
   // Note: Model prefill from URL params is handled by the useEffect below, which
   // watches for pendingPrefillModels + modelsToPick to both be populated.
@@ -613,12 +618,12 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
       });
     }
     // Only clear models if we don't have pending prefill models
-    if (!pendingPrefillModels) {
+    if (!pendingModelPrefill.current) {
       form.setFieldValue("models", []);
     }
     // Clear MCP server selection when team changes (available servers may differ)
     form.setFieldValue("allowed_mcp_servers_and_groups", { servers: [], accessGroups: [] });
-  }, [selectedCreateKeyTeam, selectedProjectId, accessToken, userID, userRole, form]);
+  }, [selectedCreateKeyTeam, selectedProjectId, accessToken, userID, userRole, form, projects]);
 
   // Apply deferred model prefill once the available model list arrives.
   // This handles timing where prefill data arrives before or after models are fetched.
@@ -649,7 +654,7 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
       setSelectedCreateKeyTeam(projectTeam);
       form.setFieldValue("team_id", projectTeam.team_id);
     }
-  }, [teams, selectedProjectId, projects]);
+  }, [teams, selectedProjectId, projects, selectedCreateKeyTeam?.team_id, form]);
 
   // Add a callback function to handle user creation
   const handleUserCreated = (userId: string) => {

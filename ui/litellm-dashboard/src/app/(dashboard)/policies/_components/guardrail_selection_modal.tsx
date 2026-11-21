@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Modal, Checkbox, Button, Divider, Tag } from "antd";
 import { CheckCircleOutlined, InfoCircleOutlined } from "@ant-design/icons";
 
@@ -31,12 +31,12 @@ const GuardrailSelectionModal: React.FC<GuardrailSelectionModalProps> = ({
   const [selectedGuardrails, setSelectedGuardrails] = useState<Set<string>>(new Set());
 
   // Prepare guardrail info with existence status
-  const guardrailsInfo: GuardrailInfo[] = (template?.guardrailDefinitions || []).map((def: any) => ({
+  const guardrailsInfo: GuardrailInfo[] = useMemo(() => (template?.guardrailDefinitions || []).map((def: any) => ({
     guardrail_name: def.guardrail_name,
     description: def.guardrail_info?.description || "No description available",
     alreadyExists: existingGuardrails.has(def.guardrail_name),
     definition: def,
-  }));
+  })), [template, existingGuardrails]);
 
   // Initialize selection: select only new guardrails by default
   useEffect(() => {
@@ -44,7 +44,7 @@ const GuardrailSelectionModal: React.FC<GuardrailSelectionModalProps> = ({
       const newGuardrails = guardrailsInfo.filter((g) => !g.alreadyExists).map((g) => g.guardrail_name);
       setSelectedGuardrails(new Set(newGuardrails));
     }
-  }, [visible, template]);
+  }, [visible, template, guardrailsInfo]);
 
   const handleToggle = (guardrailName: string) => {
     setSelectedGuardrails((prev) => {

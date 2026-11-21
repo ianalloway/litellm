@@ -217,17 +217,6 @@ const RealtimePlayground: React.FC<RealtimePlaygroundProps> = ({
     playAudioChunk,
   ]);
 
-  const disconnect = useCallback(() => {
-    stopRecording();
-    wsRef.current?.close();
-    wsRef.current = null;
-    audioContextRef.current?.close();
-    audioContextRef.current = null;
-    nextPlayTimeRef.current = 0;
-    configureSessionRef.current = false;
-    setIsConnected(false);
-  }, []);
-
   const startRecording = useCallback(async () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
@@ -301,7 +290,7 @@ const RealtimePlayground: React.FC<RealtimePlaygroundProps> = ({
     } catch (err: any) {
       addMessage("status", `Microphone error: ${err.message}`);
     }
-  }, [addMessage]);
+  }, [addMessage, selectedVoice]);
 
   const stopRecording = useCallback(() => {
     processorRef.current?.disconnect();
@@ -310,6 +299,17 @@ const RealtimePlayground: React.FC<RealtimePlaygroundProps> = ({
     mediaStreamRef.current = null;
     setIsRecording(false);
   }, []);
+
+  const disconnect = useCallback(() => {
+    stopRecording();
+    wsRef.current?.close();
+    wsRef.current = null;
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    nextPlayTimeRef.current = 0;
+    configureSessionRef.current = false;
+    setIsConnected(false);
+  }, [stopRecording]);
 
   const configureSessionRef = useRef(false);
 
@@ -351,7 +351,7 @@ const RealtimePlayground: React.FC<RealtimePlaygroundProps> = ({
       }),
     );
     wsRef.current.send(JSON.stringify({ type: "response.create" }));
-  }, [inputText, addMessage, ensureTextSession]);
+  }, [inputText, addMessage]);
 
   useEffect(() => {
     return () => {

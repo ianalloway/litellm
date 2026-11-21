@@ -71,7 +71,7 @@ const DefaultUserSettings: React.FC<DefaultUserSettingsProps> = ({
     };
 
     fetchSSOSettings();
-  }, [accessToken]);
+  }, [accessToken, userID, userRole]);
 
   const handleSaveSettings = async () => {
     if (!accessToken) return;

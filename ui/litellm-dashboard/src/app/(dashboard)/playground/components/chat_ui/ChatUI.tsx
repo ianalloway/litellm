@@ -23,7 +23,7 @@ import {
 } from "@ant-design/icons";
 import { Card, Text, TextInput, Title, Button as TremorButton } from "@tremor/react";
 import { Button, Input, Modal, Popover, Select, Spin, Tooltip, Typography, Upload } from "antd";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coy } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -263,7 +263,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch MCP servers and toolsets
-  const loadMCPServers = async () => {
+  const loadMCPServers = useCallback(async () => {
     const userApiKey = apiKeySource === "session" ? accessToken : apiKey;
     if (!userApiKey) return;
 
@@ -280,7 +280,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
     } finally {
       setIsLoadingMCPServers(false);
     }
-  };
+  }, [accessToken, apiKey, apiKeySource]);
 
   // When simplified, keep selectedModel and endpointType in sync with fixedModel / chat-only
   useEffect(() => {
@@ -291,7 +291,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
   }, [simplified, fixedModel]);
 
   // Fetch tools for a specific server
-  const loadServerTools = async (serverId: string) => {
+  const loadServerTools = useCallback(async (serverId: string) => {
     const userApiKey = apiKeySource === "session" ? accessToken : apiKey;
     if (!userApiKey || serverToolsMap[serverId]) return;
 
@@ -304,7 +304,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
     } catch (error) {
       console.error(`Error fetching tools for server ${serverId}:`, error);
     }
-  };
+  }, [accessToken, apiKey, apiKeySource, serverToolsMap]);
 
   useEffect(() => {
     if (isGetCodeModalVisible) {
@@ -347,6 +347,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
     endpointType,
     selectedModel,
     proxySettings,
+    selectedVoice,
   ]);
 
   useEffect(() => {
@@ -405,13 +406,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
 
         setModelInfo(uniqueModels);
 
-        // check for selection overlap or empty model list
-        const hasSelection = uniqueModels.some((m) => m.model_group === selectedModel);
-        if (!uniqueModels.length) {
-          setSelectedModel(undefined);
-        } else if (!hasSelection) {
-          setSelectedModel(undefined);
-        }
+        setSelectedModel((current) =>
+          uniqueModels.some((model) => model.model_group === current) ? current : undefined
+        );
       } catch (error) {
         console.error("Error fetching model info:", error);
       }
@@ -421,7 +418,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
       loadModels();
     }
     loadMCPServers();
-  }, [accessToken, userID, userRole, apiKeySource, apiKey, token, simplified]);
+  }, [accessToken, userID, userRole, apiKeySource, apiKey, token, simplified, loadMCPServers]);
 
   // Load tools when MCP direct mode has a server (or toolset) selected
   useEffect(() => {
@@ -441,7 +438,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
         loadServerTools(selected);
       }
     }
-  }, [endpointType, selectedMCPServers, serverToolsMap, mcpToolsets]);
+  }, [endpointType, selectedMCPServers, serverToolsMap, mcpToolsets, loadServerTools]);
 
   // Fetch agents when A2A endpoint is selected
   useEffect(() => {

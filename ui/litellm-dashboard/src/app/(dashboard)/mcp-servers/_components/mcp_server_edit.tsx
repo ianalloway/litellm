@@ -268,18 +268,6 @@ const MCPServerEdit: React.FC<MCPServerEditProps> = ({
     }));
   }, [mcpServer.env_vars]);
 
-  const initialEnvJson = React.useMemo(() => {
-    const env = mcpServer.env ?? undefined;
-    if (!env || Object.keys(env).length === 0) {
-      return "";
-    }
-    try {
-      return JSON.stringify(env, null, 2);
-    } catch {
-      return "";
-    }
-  }, [mcpServer.env]);
-
   // If server has spec_path, show it as "openapi" transport in the UI
   const effectiveTransport = React.useMemo(() => {
     if (mcpServer.spec_path && mcpServer.transport !== "stdio") {
@@ -301,7 +289,7 @@ const MCPServerEdit: React.FC<MCPServerEditProps> = ({
         ? JSON.stringify(mcpServer.token_validation, null, 2)
         : undefined,
     }),
-    [mcpServer, effectiveTransport, initialStaticHeaders, initialEnvVars, initialEnvJson],
+    [mcpServer, effectiveTransport, initialStaticHeaders, initialEnvVars],
   );
 
   // antd applies `initialValues` only at first mount. When the server loads after
@@ -421,7 +409,7 @@ const MCPServerEdit: React.FC<MCPServerEditProps> = ({
       const groupNames = mcpServer.mcp_access_groups.map((g: any) => (typeof g === "string" ? g : g.name || String(g)));
       form.setFieldValue("mcp_access_groups", groupNames);
     }
-  }, [mcpServer]);
+  }, [form, mcpServer]);
 
   // Fetch tools when component mounts for a saved server
   useEffect(() => {

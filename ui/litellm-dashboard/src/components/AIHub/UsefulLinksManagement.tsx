@@ -4,7 +4,7 @@ import { isAdminRole } from "@/utils/roles";
 import { ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon, PlusCircleIcon } from "@heroicons/react/outline";
 import { Card, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, Text, Title } from "@tremor/react";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getProxyBaseUrl, getPublicModelHubInfo, updateUsefulLinksCall } from "../networking";
 
 interface UsefulLinksManagementProps {
@@ -28,7 +28,7 @@ const UsefulLinksManagement: React.FC<UsefulLinksManagementProps> = ({ accessTok
   const [isRearranging, setIsRearranging] = useState(false);
   const [originalLinksOrder, setOriginalLinksOrder] = useState<Link[]>([]);
 
-  const fetchUsefulLinks = async () => {
+  const fetchUsefulLinks = useCallback(async () => {
     if (!accessToken) return;
 
     try {
@@ -76,11 +76,11 @@ const UsefulLinksManagement: React.FC<UsefulLinksManagementProps> = ({ accessTok
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     fetchUsefulLinks();
-  }, [accessToken]);
+  }, [accessToken, fetchUsefulLinks]);
 
   // Check if user is admin
   if (!isAdminRole(userRole || "")) {

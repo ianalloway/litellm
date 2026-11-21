@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Icon, Button, Col, Text, Grid } from "@tremor/react";
 import { RefreshIcon } from "@heroicons/react/outline";
 import TagInfoView from "./tag_info";
@@ -36,7 +36,7 @@ const TagManagement: React.FC<TagProps> = ({ accessToken, userID, userRole }) =>
   const [lastRefreshed, setLastRefreshed] = useState("");
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     if (!accessToken) {
       setIsLoadingTags(false);
       return;
@@ -50,7 +50,7 @@ const TagManagement: React.FC<TagProps> = ({ accessToken, userID, userRole }) =>
     } finally {
       setIsLoadingTags(false);
     }
-  };
+  }, [accessToken]);
 
   const handleRefreshClick = () => {
     fetchTags();
@@ -118,7 +118,7 @@ const TagManagement: React.FC<TagProps> = ({ accessToken, userID, userRole }) =>
 
   useEffect(() => {
     fetchTags();
-  }, [accessToken]);
+  }, [accessToken, fetchTags]);
 
   return (
     <div className="mx-4 h-[75vh]">

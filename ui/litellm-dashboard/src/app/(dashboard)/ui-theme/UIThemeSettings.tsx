@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState } from "react";
 import { Card, Title, Text, TextInput, Button } from "@tremor/react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getProxyBaseUrl, getGlobalLitellmHeaderName } from "@/components/networking";
@@ -16,13 +17,8 @@ const UIThemeSettings: React.FC<UIThemeSettingsProps> = ({ userID, userRole, acc
   const [faviconUrlInput, setFaviconUrlInput] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (accessToken) {
-      fetchThemeSettings();
-    }
-  }, [accessToken]);
 
-  const fetchThemeSettings = async () => {
+  const fetchThemeSettings = useCallback(async () => {
     try {
       const proxyBaseUrl = getProxyBaseUrl();
       const url = proxyBaseUrl ? `${proxyBaseUrl}/get/ui_theme_settings` : "/get/ui_theme_settings";
@@ -43,7 +39,9 @@ const UIThemeSettings: React.FC<UIThemeSettingsProps> = ({ userID, userRole, acc
     } catch (error) {
       console.error("Error fetching theme settings:", error);
     }
-  };
+  }, [accessToken, setFaviconUrl, setLogoUrl]);
+
+  useDeferredRequest(fetchThemeSettings, Boolean(accessToken));
 
   const handleSave = async () => {
     setLoading(true);

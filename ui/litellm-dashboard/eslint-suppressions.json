@@ -58,9 +58,6 @@
     },
     "no-restricted-imports": {
       "count": 1
-    },
-    "react-hooks/immutability": {
-      "count": 1
     }
   },
   "src/app/(dashboard)/agents/_components/agent_virtual_keys.tsx": {
@@ -106,7 +103,7 @@
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
-      "count": 2
+      "count": 1
     }
   },
   "src/app/(dashboard)/caching/_components/cache_health.tsx": {
@@ -501,11 +498,6 @@
       "count": 1
     }
   },
-  "src/app/(dashboard)/mcp-servers/_components/MCPNetworkSettings.tsx": {
-    "react-hooks/immutability": {
-      "count": 2
-    }
-  },
   "src/app/(dashboard)/mcp-servers/_components/MCPSubmissionsTab.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -693,9 +685,6 @@
     "no-restricted-imports": {
       "count": 2
     },
-    "react-hooks/immutability": {
-      "count": 1
-    },
     "react-hooks/purity": {
       "count": 1
     }
@@ -763,9 +752,6 @@
       "count": 2
     },
     "react-hooks/immutability": {
-      "count": 2
-    },
-    "react-hooks/preserve-manual-memoization": {
       "count": 1
     }
   },
@@ -790,9 +776,6 @@
   "src/app/(dashboard)/playground/components/complianceUI/ComplianceUI.tsx": {
     "no-nested-ternary": {
       "count": 8
-    },
-    "react-hooks/preserve-manual-memoization": {
-      "count": 3
     }
   },
   "src/app/(dashboard)/playground/llm_calls/a2a_send_message.tsx": {
@@ -879,9 +862,6 @@
     },
     "no-restricted-imports": {
       "count": 1
-    },
-    "react-hooks/immutability": {
-      "count": 1
     }
   },
   "src/app/(dashboard)/policies/_components/attachment_table.test.tsx": {
@@ -962,9 +942,6 @@
     "no-restricted-imports": {
       "count": 1
     },
-    "react-hooks/immutability": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -1021,9 +998,6 @@
     },
     "no-restricted-imports": {
       "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "src/app/(dashboard)/prompts/_components/prompt_editor_view/PromptEditorHeader.tsx": {
@@ -1053,9 +1027,6 @@
   },
   "src/app/(dashboard)/prompts/_components/prompt_editor_view/VersionHistorySidePanel.tsx": {
     "no-nested-ternary": {
-      "count": 1
-    },
-    "react-hooks/immutability": {
       "count": 1
     }
   },
@@ -1164,9 +1135,6 @@
     },
     "no-restricted-syntax": {
       "count": 3
-    },
-    "react-hooks/immutability": {
-      "count": 1
     }
   },
   "src/app/(dashboard)/usage/_components/components/EndpointUsage/components/EndpointUsageTable.tsx": {
@@ -1186,9 +1154,6 @@
   },
   "src/app/(dashboard)/usage/_components/components/UsageAIChatPanel.tsx": {
     "no-nested-ternary": {
-      "count": 1
-    },
-    "react-hooks/immutability": {
       "count": 1
     }
   },
@@ -1392,9 +1357,6 @@
       "count": 2
     },
     "no-restricted-imports": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1744,9 +1706,6 @@
     },
     "no-restricted-syntax": {
       "count": 3
-    },
-    "react-hooks/immutability": {
-      "count": 1
     }
   },
   "src/components/common_components/AccessGroupSelector.tsx": {
@@ -1857,16 +1816,10 @@
   "src/components/edit_auto_router/edit_auto_router_modal.tsx": {
     "no-restricted-imports": {
       "count": 1
-    },
-    "react-hooks/immutability": {
-      "count": 1
     }
   },
   "src/components/email_events/email_event_settings.tsx": {
     "no-restricted-imports": {
-      "count": 1
-    },
-    "react-hooks/immutability": {
       "count": 1
     }
   },
@@ -2131,11 +2084,6 @@
       "count": 1
     }
   },
-  "src/components/price_data_reload.tsx": {
-    "react-hooks/immutability": {
-      "count": 2
-    }
-  },
   "src/components/public_model_hub.tsx": {
     "no-nested-ternary": {
       "count": 1
@@ -2329,11 +2277,6 @@
   "src/components/view_logs/LogDetailsDrawer/prettyMessagesUtils.ts": {
     "no-nested-ternary": {
       "count": 1
-    }
-  },
-  "src/components/view_logs/LogDetailsDrawer/useKeyboardNavigation.ts": {
-    "react-hooks/immutability": {
-      "count": 2
     }
   },
   "src/components/view_logs/LogsTableToolbar.tsx": {
