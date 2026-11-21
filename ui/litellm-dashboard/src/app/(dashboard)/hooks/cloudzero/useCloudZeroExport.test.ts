@@ -28,7 +28,7 @@ vi.mock("@/components/networking", () => ({
 
 describe("useCloudZeroExport", () => {
   let queryClient: QueryClient;
-  let fetchSpy: ReturnType<typeof vi.fn>;
+  const fetchSpy = vi.fn<typeof fetch>();
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -44,11 +44,12 @@ describe("useCloudZeroExport", () => {
 
     vi.clearAllMocks();
 
-    fetchSpy = vi.fn();
-    global.fetch = fetchSpy;
+    fetchSpy.mockReset();
+    vi.stubGlobal("fetch", fetchSpy);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -63,10 +64,7 @@ describe("useCloudZeroExport", () => {
 
   it("should successfully export data with custom operation", async () => {
     const mockResponse = { records_exported: 100, status: "success" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -91,10 +89,7 @@ describe("useCloudZeroExport", () => {
 
   it("should use default operation of replace_hourly when operation is not provided", async () => {
     const mockResponse = { records_exported: 50, status: "success" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -105,16 +100,13 @@ describe("useCloudZeroExport", () => {
     });
 
     expect(result.current.data).toEqual(mockResponse);
-    const callBody = JSON.parse((fetchSpy as any).mock.calls[0][1].body);
+    const callBody = await new Request(...fetchSpy.mock.calls[0]).json();
     expect(callBody.operation).toBe("replace_hourly");
   });
 
   it("should handle error response with error.message", async () => {
     const errorResponse = { error: { message: "Export failed" } };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -129,10 +121,7 @@ describe("useCloudZeroExport", () => {
 
   it("should handle error response with message field", async () => {
     const errorResponse = { message: "Invalid operation" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -147,10 +136,7 @@ describe("useCloudZeroExport", () => {
 
   it("should handle error response with detail field", async () => {
     const errorResponse = { detail: "Server error occurred" };
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => errorResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(errorResponse, { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -164,12 +150,7 @@ describe("useCloudZeroExport", () => {
   });
 
   it("should handle error response with invalid JSON", async () => {
-    (fetchSpy as any).mockResolvedValue({
-      ok: false,
-      json: async () => {
-        throw new Error("Invalid JSON");
-      },
-    });
+    fetchSpy.mockImplementation(async () => new Response("invalid JSON", { status: 500 }));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -184,7 +165,7 @@ describe("useCloudZeroExport", () => {
 
   it("should handle network error", async () => {
     const networkError = new Error("Network request failed");
-    (fetchSpy as any).mockRejectedValue(networkError);
+    fetchSpy.mockRejectedValue(networkError);
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 
@@ -201,7 +182,8 @@ describe("useCloudZeroExport", () => {
     ["empty string", ""],
     ["null", null],
   ])("should throw error when accessToken is %s", async (_, invalidToken) => {
-    const { result } = renderHook(() => useCloudZeroExport(invalidToken as any), { wrapper });
+    // @ts-expect-error Exercise the runtime guard for an invalid token from an untyped caller.
+    const { result } = renderHook(() => useCloudZeroExport(invalidToken), { wrapper });
 
     result.current.mutate({ operation: "replace_daily" });
 
@@ -216,10 +198,7 @@ describe("useCloudZeroExport", () => {
   it("should use relative URL when proxyBaseUrl is not set", async () => {
     mockGetProxyBaseUrl.mockReturnValue("");
     const mockResponse = { records_exported: 50 };
-    (fetchSpy as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    fetchSpy.mockImplementation(async () => Response.json(mockResponse));
 
     const { result } = renderHook(() => useCloudZeroExport(mockAccessToken), { wrapper });
 

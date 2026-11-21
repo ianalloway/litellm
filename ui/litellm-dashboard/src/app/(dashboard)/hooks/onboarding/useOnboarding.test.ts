@@ -35,7 +35,7 @@ describe("useOnboardingCredentials", () => {
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("fetches credentials when inviteId is provided and UIConfig is loaded", async () => {
-    (getOnboardingCredentials as any).mockResolvedValue(mockCredentialsResponse);
+    vi.mocked(getOnboardingCredentials).mockResolvedValue(mockCredentialsResponse);
 
     const { result } = renderHook(() => useOnboardingCredentials("invite-123"), { wrapper });
 
@@ -68,7 +68,7 @@ describe("useOnboardingCredentials", () => {
 
   it("exposes error state when fetch fails", async () => {
     const error = new Error("Invalid invite");
-    (getOnboardingCredentials as any).mockRejectedValue(error);
+    vi.mocked(getOnboardingCredentials).mockRejectedValue(error);
 
     const { result } = renderHook(() => useOnboardingCredentials("bad-invite"), { wrapper });
 
@@ -77,6 +77,13 @@ describe("useOnboardingCredentials", () => {
     expect(result.current.error).toEqual(error);
   });
 });
+
+const claimParams = {
+  accessToken: "acc-token",
+  inviteId: "invite-123",
+  userId: "user-456",
+  password: "secret",
+};
 
 describe("useClaimOnboardingToken", () => {
   let queryClient: QueryClient;
@@ -96,17 +103,12 @@ describe("useClaimOnboardingToken", () => {
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("calls claimOnboardingToken with correct params", async () => {
-    (claimOnboardingToken as any).mockResolvedValue({ success: true });
+    vi.mocked(claimOnboardingToken).mockResolvedValue({ success: true });
 
     const { result } = renderHook(() => useClaimOnboardingToken(), { wrapper });
 
     act(() => {
-      result.current.mutate({
-        accessToken: "acc-token",
-        inviteId: "invite-123",
-        userId: "user-456",
-        password: "secret",
-      });
+      result.current.mutate(claimParams);
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -116,17 +118,12 @@ describe("useClaimOnboardingToken", () => {
 
   it("exposes error state when mutation fails", async () => {
     const error = new Error("Claim failed");
-    (claimOnboardingToken as any).mockRejectedValue(error);
+    vi.mocked(claimOnboardingToken).mockRejectedValue(error);
 
     const { result } = renderHook(() => useClaimOnboardingToken(), { wrapper });
 
     act(() => {
-      result.current.mutate({
-        accessToken: "acc-token",
-        inviteId: "invite-123",
-        userId: "user-456",
-        password: "secret",
-      });
+      result.current.mutate(claimParams);
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
