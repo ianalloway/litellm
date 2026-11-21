@@ -1,12 +1,14 @@
+import type { ComponentProps, ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---- Hoisted shared mocks (safe to use inside vi.mock factories) ----
-const { keyUpdateCallMock, keyDeleteCallMock, mockUseAuthorized } = vi.hoisted(() => {
+const { keyUpdateCallMock, keyDeleteCallMock, mockUseAuthorized, formState } = vi.hoisted(() => {
   return {
     keyUpdateCallMock: vi.fn().mockResolvedValue({}),
     keyDeleteCallMock: vi.fn().mockResolvedValue({}),
     mockUseAuthorized: vi.fn(),
+    formState: { values: {} as Record<string, unknown> },
   };
 });
 
@@ -20,8 +22,8 @@ vi.mock("@/app/(dashboard)/hooks/useAuthorized", () => ({
 // Networking: wire the hoisted fns so we can assert calls later
 vi.mock("../networking", () => {
   return {
-    keyUpdateCall: (...args: any[]) => keyUpdateCallMock(...args),
-    keyDeleteCall: (...args: any[]) => keyDeleteCallMock(...args),
+    keyUpdateCall: (...args: Parameters<typeof import("../networking").keyUpdateCall>) => keyUpdateCallMock(...args),
+    keyDeleteCall: (...args: Parameters<typeof import("../networking").keyDeleteCall>) => keyDeleteCallMock(...args),
   };
 });
 
@@ -47,32 +49,32 @@ vi.mock("../../utils/roles", async (importOriginal) => {
 // Helpers used in rendering
 vi.mock("@/utils/dataUtils", () => ({
   copyToClipboard: async () => true,
-  formatNumberWithCommas: (n: any) => String(n),
+  formatNumberWithCommas: (n: unknown) => String(n),
 }));
 vi.mock("../key_info_utils", () => ({
   extractLoggingSettings: () => ({}),
-  formatMetadataForDisplay: (m: any) => JSON.stringify(m, null, 2),
-  stripTagsFromMetadata: (m: any) => m,
+  formatMetadataForDisplay: (m: unknown) => JSON.stringify(m, null, 2),
+  stripTagsFromMetadata: (m: unknown) => m,
 }));
 vi.mock("../callback_info_helpers", () => ({
   callback_map: {},
-  mapInternalToDisplayNames: (x: any) => x,
-  mapDisplayToInternalNames: (x: any) => x,
+  mapInternalToDisplayNames: (x: unknown) => x,
+  mapDisplayToInternalNames: (x: unknown) => x,
 }));
 vi.mock("../shared/errorUtils", () => ({
-  parseErrorMessage: (e: any) => String(e),
+  parseErrorMessage: (e: unknown) => String(e),
 }));
 
 // Tremor components -> async factory, local React import, and named passthroughs
 vi.mock("@tremor/react", async () => {
   const React = await import("react");
 
-  const makeNamedPassthrough = (tag: any, name: string) => {
-    function Named(props: any) {
+  const makeNamedPassthrough = (tag: "div" | "span" | "h1", name: string) => {
+    function Named(props: ComponentProps<"div">) {
       const { children, ...rest } = props;
       return React.createElement(tag, rest, children);
     }
-    (Named as any).displayName = name;
+    Named.displayName = name;
     return Named;
   };
 
@@ -87,27 +89,27 @@ vi.mock("@tremor/react", async () => {
   const Title = makeNamedPassthrough("h1", "Title");
   const Badge = makeNamedPassthrough("span", "Badge");
 
-  function Button(props: any) {
+  function Button(props: ComponentProps<"button">) {
     const { children, onClick, ...rest } = props;
     return React.createElement("button", { onClick, ...rest }, children);
   }
-  (Button as any).displayName = "Button";
+  Button.displayName = "Button";
 
-  function Tab(props: any) {
+  function Tab(props: ComponentProps<"button">) {
     const { children, ...rest } = props;
     return React.createElement("button", { ...rest }, children);
   }
-  (Tab as any).displayName = "Tab";
+  Tab.displayName = "Tab";
 
-  function TextInput(props: any) {
+  function TextInput(props: ComponentProps<"input">) {
     return React.createElement("input", { ...props });
   }
-  (TextInput as any).displayName = "TextInput";
+  TextInput.displayName = "TextInput";
 
-  function TremorSelect(props: any) {
+  function TremorSelect(props: ComponentProps<"select">) {
     return React.createElement("select", { ...props });
   }
-  (TremorSelect as any).displayName = "TremorSelect";
+  TremorSelect.displayName = "TremorSelect";
 
   return {
     Card,
@@ -135,31 +137,31 @@ vi.mock("antd", async (importOriginal) => {
 
   const Form = { useForm: () => [{}] };
 
-  function Input(props: any) {
+  function Input(props: ComponentProps<"input">) {
     return React.createElement("input", { ...props });
   }
-  (Input as any).displayName = "AntdInput";
+  Input.displayName = "AntdInput";
 
-  function InputNumber(props: any) {
+  function InputNumber(props: ComponentProps<"input">) {
     return React.createElement("input", { ...props });
   }
-  (InputNumber as any).displayName = "AntdInputNumber";
+  InputNumber.displayName = "AntdInputNumber";
 
-  function Select(props: any) {
+  function Select(props: ComponentProps<"select">) {
     return React.createElement("select", { ...props });
   }
-  (Select as any).displayName = "AntdSelect";
+  Select.displayName = "AntdSelect";
 
-  function Tooltip({ children }: any) {
+  function Tooltip({ children }: { children: ReactNode }) {
     return React.createElement(React.Fragment, null, children);
   }
-  (Tooltip as any).displayName = "AntdTooltip";
+  Tooltip.displayName = "AntdTooltip";
 
-  function Button(props: any) {
+  function Button(props: ComponentProps<"button">) {
     const { children, onClick, ...rest } = props;
     return React.createElement("button", { onClick, ...rest }, children);
   }
-  (Button as any).displayName = "AntdButton";
+  Button.displayName = "AntdButton";
 
   return { ...actual, Form, Input, InputNumber, Select, Tooltip, Button };
 });
@@ -170,15 +172,15 @@ vi.mock("@heroicons/react/outline", async () => {
   function ArrowLeftIcon() {
     return React.createElement("span");
   }
-  (ArrowLeftIcon as any).displayName = "ArrowLeftIcon";
+  ArrowLeftIcon.displayName = "ArrowLeftIcon";
   function TrashIcon() {
     return React.createElement("span");
   }
-  (TrashIcon as any).displayName = "TrashIcon";
+  TrashIcon.displayName = "TrashIcon";
   function RefreshIcon() {
     return React.createElement("span");
   }
-  (RefreshIcon as any).displayName = "RefreshIcon";
+  RefreshIcon.displayName = "RefreshIcon";
   return { ArrowLeftIcon, TrashIcon, RefreshIcon };
 });
 
@@ -187,11 +189,11 @@ vi.mock("lucide-react", async () => {
   function CopyIcon() {
     return React.createElement("span");
   }
-  (CopyIcon as any).displayName = "CopyIcon";
+  CopyIcon.displayName = "CopyIcon";
   function CheckIcon() {
     return React.createElement("span");
   }
-  (CheckIcon as any).displayName = "CheckIcon";
+  CheckIcon.displayName = "CheckIcon";
   return { CopyIcon, CheckIcon };
 });
 
@@ -201,7 +203,7 @@ vi.mock("../organisms/RegenerateKeyModal", async () => {
   function RegenerateKeyModal() {
     return null;
   }
-  (RegenerateKeyModal as any).displayName = "RegenerateKeyModal";
+  RegenerateKeyModal.displayName = "RegenerateKeyModal";
   return { RegenerateKeyModal };
 });
 vi.mock("../object_permissions_view", async () => {
@@ -209,7 +211,7 @@ vi.mock("../object_permissions_view", async () => {
   function ObjectPermissionsView() {
     return null;
   }
-  (ObjectPermissionsView as any).displayName = "ObjectPermissionsView";
+  ObjectPermissionsView.displayName = "ObjectPermissionsView";
   return { __esModule: true, default: ObjectPermissionsView };
 });
 vi.mock("../logging_settings_view", async () => {
@@ -217,7 +219,7 @@ vi.mock("../logging_settings_view", async () => {
   function LoggingSettingsView() {
     return null;
   }
-  (LoggingSettingsView as any).displayName = "LoggingSettingsView";
+  LoggingSettingsView.displayName = "LoggingSettingsView";
   return { __esModule: true, default: LoggingSettingsView };
 });
 vi.mock("../common_components/AutoRotationView", async () => {
@@ -225,7 +227,7 @@ vi.mock("../common_components/AutoRotationView", async () => {
   function AutoRotationView() {
     return null;
   }
-  (AutoRotationView as any).displayName = "AutoRotationView";
+  AutoRotationView.displayName = "AutoRotationView";
   return { __esModule: true, default: AutoRotationView };
 });
 
@@ -279,20 +281,20 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
 // KeyEditView mock: triggers onSubmit with our injected form values
 vi.mock("./key_edit_view", async () => {
   const React = await import("react");
-  function KeyEditView(props: any) {
+  function KeyEditView(props: { onSubmit: (values: Record<string, unknown>) => void }) {
     return React.createElement(
       "div",
       null,
       React.createElement(
         "button",
         {
-          onClick: () => props.onSubmit((globalThis as any).__TEST_FORM_VALUES ?? {}),
+          onClick: () => props.onSubmit(formState.values),
         },
         "Mock Submit",
       ),
     );
   }
-  (KeyEditView as any).displayName = "KeyEditViewMock";
+  KeyEditView.displayName = "KeyEditViewMock";
   return { KeyEditView };
 });
 
@@ -312,28 +314,31 @@ const baseKeyData = {
   tpm_limit: null,
   rpm_limit: null,
   models: [] as string[],
-  metadata: {} as Record<string, any>,
-  object_permission: {} as Record<string, any>,
+  metadata: {},
+  object_permission: {},
   auto_rotate: false,
-  rotation_interval: null as any,
-  last_rotation_at: null as any,
-  key_rotation_at: null as any,
-  next_rotation_at: null as any,
+  rotation_interval: null,
+  last_rotation_at: null,
+  key_rotation_at: null,
+  next_rotation_at: null,
 };
 
-const renderView = (premiumUser: boolean) => {
-  // Configure the mock for this test
-  mockUseAuthorized.mockReturnValue({
+function setAuthorizedUser(userRole: string, premiumUser: boolean) {
+  const authorization = {
     accessToken: "access_abc",
     userId: "user_1",
-    userRole: "Admin",
+    userRole,
     premiumUser,
     token: "token_123",
     userEmail: "test@example.com",
     disabledPersonalKeyCreation: false,
     showSSOBanner: false,
-  });
+  };
+  mockUseAuthorized.mockReturnValue(authorization);
+}
 
+const renderView = (premiumUser: boolean) => {
+  setAuthorizedUser("Admin", premiumUser);
   return render(
     <KeyInfoView
       keyId="tok_123"
@@ -347,23 +352,14 @@ const renderView = (premiumUser: boolean) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__TEST_FORM_VALUES = undefined;
+  formState.values = {};
 });
 
 // ---- Tests ----
 describe("KeyInfoView handleKeyUpdate guardrails guard", () => {
   it("should remove guardrails & prompts for non-premium key owner without write access role", async () => {
     const keyDataWithOwner = { ...baseKeyData, user_id: "user_1" };
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "access_abc",
-      userId: "user_1",
-      userRole: "viewer",
-      premiumUser: false,
-      token: "token_123",
-      userEmail: "test@example.com",
-      disabledPersonalKeyCreation: false,
-      showSSOBanner: false,
-    });
+    setAuthorizedUser("viewer", false);
 
     render(
       <KeyInfoView
@@ -377,7 +373,7 @@ describe("KeyInfoView handleKeyUpdate guardrails guard", () => {
 
     fireEvent.click(screen.getByText("Settings"));
     fireEvent.click(screen.getByText("Edit Settings"));
-    (globalThis as any).__TEST_FORM_VALUES = {
+    formState.values = {
       token: "tok_123",
       guardrails: ["gr-1", "gr-2"],
       prompts: ["fast", "safe"],
@@ -402,7 +398,7 @@ describe("KeyInfoView handleKeyUpdate guardrails guard", () => {
 
     fireEvent.click(screen.getByText("Settings"));
     fireEvent.click(screen.getByText("Edit Settings"));
-    (globalThis as any).__TEST_FORM_VALUES = {
+    formState.values = {
       token: "tok_123",
       guardrails: ["gr-1"],
       prompts: ["fast"],
@@ -426,7 +422,7 @@ describe("KeyInfoView handleKeyUpdate guardrails guard", () => {
 
     fireEvent.click(screen.getByText("Settings"));
     fireEvent.click(screen.getByText("Edit Settings"));
-    (globalThis as any).__TEST_FORM_VALUES = {
+    formState.values = {
       token: "tok_123",
       guardrails: ["gr-1"],
       prompts: ["fast"],
@@ -453,7 +449,7 @@ describe("KeyInfoView handleKeyUpdate empty strings", () => {
 
       fireEvent.click(screen.getByText("Settings"));
       fireEvent.click(screen.getByText("Edit Settings"));
-      (globalThis as any).__TEST_FORM_VALUES = {
+      formState.values = {
         token: "tok_123",
         [limit]: "",
       };

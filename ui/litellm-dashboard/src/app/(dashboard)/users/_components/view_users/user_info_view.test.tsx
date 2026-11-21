@@ -33,15 +33,20 @@ const MOCK_USER_DATA_NO_TEAMS = {
 
 vi.mock("@/components/networking", () => {
   return {
-    userGetInfoV2: (...args: any[]) => mockUserGetInfoV2(...args),
+    userGetInfoV2: (...args: Parameters<typeof import("@/components/networking").userGetInfoV2>) =>
+      mockUserGetInfoV2(...args),
     userDeleteCall: vi.fn(),
     userUpdateUserCall: vi.fn(),
     modelAvailableCall: vi.fn().mockResolvedValue({ data: [] }),
     invitationCreateCall: vi.fn(),
-    teamInfoCall: (...args: any[]) => mockTeamInfoCall(...args),
-    teamListCall: (...args: any[]) => mockTeamListCall(...args),
-    teamMemberAddCall: (...args: any[]) => mockTeamMemberAddCall(...args),
-    teamMemberDeleteCall: (...args: any[]) => mockTeamMemberDeleteCall(...args),
+    teamInfoCall: (...args: Parameters<typeof import("@/components/networking").teamInfoCall>) =>
+      mockTeamInfoCall(...args),
+    teamListCall: (...args: Parameters<typeof import("@/components/networking").teamListCall>) =>
+      mockTeamListCall(...args),
+    teamMemberAddCall: (...args: Parameters<typeof import("@/components/networking").teamMemberAddCall>) =>
+      mockTeamMemberAddCall(...args),
+    teamMemberDeleteCall: (...args: Parameters<typeof import("@/components/networking").teamMemberDeleteCall>) =>
+      mockTeamMemberDeleteCall(...args),
     getProxyBaseUrl: () => "https://litellm.test",
   };
 });
