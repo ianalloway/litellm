@@ -189,7 +189,7 @@ describe("Sidebar (leftnav)", () => {
   });
 
   it("should show Organizations tab for organization admins", () => {
-    mockUseAuthorized.mockReturnValueOnce({
+    const mockAuthorization = {
       userId: "org-admin-user-id",
       accessToken: "test-access-token",
       userRole: "viewer",
@@ -198,7 +198,8 @@ describe("Sidebar (leftnav)", () => {
       premiumUser: false,
       disabledPersonalKeyCreation: false,
       showSSOBanner: false,
-    });
+    };
+    mockUseAuthorized.mockReturnValueOnce(mockAuthorization);
 
     mockUseOrganizations.mockReturnValueOnce({
       data: [

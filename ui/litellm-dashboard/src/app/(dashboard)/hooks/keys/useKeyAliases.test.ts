@@ -158,13 +158,14 @@ describe("useInfiniteKeyAliases", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    mockKeyAliasesCall.mockResolvedValue({
+    const mockKeyAliasPage = {
       aliases: ["search-result"],
       total_count: 1,
       current_page: 1,
       total_pages: 1,
       size: 50,
-    });
+    };
+    mockKeyAliasesCall.mockResolvedValue(mockKeyAliasPage);
 
     rerender({ search: "search-result" });
 

@@ -12,12 +12,13 @@ describe("transformKeyInfo", () => {
       },
     };
     const result = transformKeyInfo(apiResponse);
-    expect(result).toEqual({
+    const expectedKeyInfo = {
       token: "sk-abc123",
       token_id: "tok_1",
       key_name: "my-key",
       spend: 10.5,
-    });
+    };
+    expect(result).toEqual(expectedKeyInfo);
   });
 
   it("should set the token field from the key property", () => {

@@ -314,14 +314,15 @@ describe("RegenerateKeyModal", () => {
     // back the existing max_budget / tpm_limit / rpm_limit. The modal must prefer the
     // values the user just submitted, not whatever the server echoes.
     const user = userEvent.setup();
-    mockRegenerateKeyCall.mockResolvedValue({
+    const mockRotatedKey = {
       key: "sk-new-regenerated-key",
       token: "new-token-hash",
       // stale values echoed from the server
       max_budget: 9999,
       tpm_limit: 9999,
       rpm_limit: 9999,
-    });
+    };
+    mockRegenerateKeyCall.mockResolvedValue(mockRotatedKey);
 
     renderWithProviders(<RegenerateKeyModal {...defaultProps} />);
     await user.click(screen.getByRole("button", { name: /Regenerate/ }));

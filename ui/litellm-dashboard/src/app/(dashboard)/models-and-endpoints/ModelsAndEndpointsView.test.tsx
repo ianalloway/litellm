@@ -102,12 +102,13 @@ describe("ModelsAndEndpointsView", () => {
       isLoading: false,
       error: null,
     });
-    mockUseAuthorized.mockReturnValue({
+    const mockAuthorization = {
       accessToken: "123",
       token: "123",
       userRole: "Admin",
       userId: "123",
-    });
+    };
+    mockUseAuthorized.mockReturnValue(mockAuthorization);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).ResizeObserver = class {
       observe() {}

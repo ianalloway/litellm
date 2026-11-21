@@ -320,12 +320,13 @@ describe("useChatHistory", () => {
         result.current.updateChatImageUI("http://img.png", "gpt-4");
       });
 
-      expect(result.current.chatHistory[0]).toEqual({
+      const expectedChatMessage = {
         role: "assistant",
         content: "",
         model: "gpt-4",
         image: { url: "http://img.png", detail: "auto" },
-      });
+      };
+      expect(result.current.chatHistory[0]).toEqual(expectedChatMessage);
     });
   });
 

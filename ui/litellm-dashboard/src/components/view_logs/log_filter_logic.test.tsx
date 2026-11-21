@@ -138,20 +138,21 @@ describe("useLogFilterLogic", () => {
 
       await waitFor(
         () => {
+          const expectedFilterParams = {
+            team_id: undefined,
+            api_key: undefined,
+            request_id: undefined,
+            user_id: undefined,
+            end_user: undefined,
+            status_filter: undefined,
+            model_id: undefined,
+            key_alias: undefined,
+            error_code: undefined,
+            error_message: undefined,
+          };
           expect(uiSpendLogsCall).toHaveBeenLastCalledWith(
             expect.objectContaining({
-              params: expect.objectContaining({
-                team_id: undefined,
-                api_key: undefined,
-                request_id: undefined,
-                user_id: undefined,
-                end_user: undefined,
-                status_filter: undefined,
-                model_id: undefined,
-                key_alias: undefined,
-                error_code: undefined,
-                error_message: undefined,
-              }),
+              params: expect.objectContaining(expectedFilterParams),
             }),
           );
         },

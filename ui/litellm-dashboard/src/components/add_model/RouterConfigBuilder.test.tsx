@@ -44,15 +44,14 @@ describe("RouterConfigBuilder", () => {
 
     await user.click(screen.getByRole("button", { name: /add route/i }));
 
+    const expectedRouterRule = {
+      name: "",
+      utterances: [],
+      description: "",
+      score_threshold: 0.5,
+    };
     expect(onChange).toHaveBeenCalledWith({
-      routes: [
-        expect.objectContaining({
-          name: "",
-          utterances: [],
-          description: "",
-          score_threshold: 0.5,
-        }),
-      ],
+      routes: [expect.objectContaining(expectedRouterRule)],
     });
   });
 
