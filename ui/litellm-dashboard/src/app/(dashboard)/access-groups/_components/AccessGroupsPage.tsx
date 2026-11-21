@@ -27,7 +27,6 @@ import useAuthorized from "@/app/(dashboard)/hooks/useAuthorized";
 import { isProxyAdminRole } from "@/utils/roles";
 
 declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData, TValue> {
     responsive?: string[];
   }
@@ -229,7 +228,6 @@ export function AccessGroupsPage() {
         : []),
     ],
     // setSelectedGroup is stable (useState setter)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canModify],
   );
 
