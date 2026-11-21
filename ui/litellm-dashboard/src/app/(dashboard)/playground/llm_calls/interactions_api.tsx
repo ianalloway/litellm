@@ -15,11 +15,6 @@ export async function makeInteractionsRequest(
     throw new Error("Virtual Key is required");
   }
 
-  const isLocal = process.env.NODE_ENV === "development";
-  if (isLocal !== true) {
-    console.log = function () {};
-  }
-
   const proxyBaseUrl = customBaseUrl || getProxyBaseUrl();
   const normalizedBaseUrl = proxyBaseUrl.endsWith("/") ? proxyBaseUrl.slice(0, -1) : proxyBaseUrl;
   const requestUrl = `${normalizedBaseUrl}/v1beta/interactions`;
