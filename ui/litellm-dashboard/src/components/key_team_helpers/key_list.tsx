@@ -1,5 +1,5 @@
 import { Setter } from "@/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { keyListCall, Member, Organization } from "../networking";
 
 export interface Team {
@@ -168,7 +168,7 @@ const useKeyList = ({
   const [error, setError] = useState<Error | null>(null);
 
   const expandedFields = expand.join(",");
-  const fetchKeys = React.useCallback(async (params: Record<string, unknown> = {}): Promise<void> => {
+  const fetchKeys = useCallback(async (params: Record<string, unknown> = {}): Promise<void> => {
     try {
       if (!accessToken) {
         return;
