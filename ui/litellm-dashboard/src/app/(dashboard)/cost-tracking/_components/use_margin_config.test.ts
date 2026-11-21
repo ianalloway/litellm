@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useMarginConfig } from "./use_margin_config";
+import { type AddMarginParams, useMarginConfig } from "./use_margin_config";
 import NotificationsManager from "@/components/molecules/notifications_manager";
 
 vi.mock("@/components/networking", () => ({
@@ -24,6 +24,13 @@ vi.mock("@/components/provider_info_helpers", () => ({
     Anthropic: "Anthropic",
   },
 }));
+
+const percentageMargin: AddMarginParams = {
+  selectedProvider: "OpenAI",
+  marginType: "percentage",
+  percentageValue: "10",
+  fixedAmountValue: "",
+};
 
 describe("useMarginConfig", () => {
   beforeEach(() => {
@@ -80,12 +87,7 @@ describe("useMarginConfig", () => {
 
       let success: boolean;
       await act(async () => {
-        success = await result.current.handleAddMargin({
-          selectedProvider: undefined,
-          marginType: "percentage",
-          percentageValue: "10",
-          fixedAmountValue: "",
-        });
+        success = await result.current.handleAddMargin({ ...percentageMargin, selectedProvider: undefined });
       });
 
       expect(success!).toBe(false);
@@ -97,12 +99,7 @@ describe("useMarginConfig", () => {
 
       let success: boolean;
       await act(async () => {
-        success = await result.current.handleAddMargin({
-          selectedProvider: "OpenAI",
-          marginType: "percentage",
-          percentageValue: "2000",
-          fixedAmountValue: "",
-        });
+        success = await result.current.handleAddMargin({ ...percentageMargin, percentageValue: "2000" });
       });
 
       expect(success!).toBe(false);
@@ -125,12 +122,7 @@ describe("useMarginConfig", () => {
 
       let success: boolean;
       await act(async () => {
-        success = await result.current.handleAddMargin({
-          selectedProvider: "OpenAI",
-          marginType: "percentage",
-          percentageValue: "10",
-          fixedAmountValue: "",
-        });
+        success = await result.current.handleAddMargin(percentageMargin);
       });
 
       expect(success!).toBe(false);
@@ -151,12 +143,7 @@ describe("useMarginConfig", () => {
 
       let success: boolean;
       await act(async () => {
-        success = await result.current.handleAddMargin({
-          selectedProvider: "OpenAI",
-          marginType: "percentage",
-          percentageValue: "10",
-          fixedAmountValue: "",
-        });
+        success = await result.current.handleAddMargin(percentageMargin);
       });
 
       expect(success!).toBe(true);
@@ -178,14 +165,15 @@ describe("useMarginConfig", () => {
         await result.current.fetchMarginConfig();
       });
 
+      const fixedMargin: AddMarginParams = {
+        ...percentageMargin,
+        marginType: "fixed",
+        percentageValue: "",
+        fixedAmountValue: "0.001",
+      };
       let success: boolean;
       await act(async () => {
-        success = await result.current.handleAddMargin({
-          selectedProvider: "OpenAI",
-          marginType: "fixed",
-          percentageValue: "",
-          fixedAmountValue: "0.001",
-        });
+        success = await result.current.handleAddMargin(fixedMargin);
       });
 
       expect(success!).toBe(true);
@@ -210,10 +198,9 @@ describe("useMarginConfig", () => {
       let success: boolean;
       await act(async () => {
         success = await result.current.handleAddMargin({
+          ...percentageMargin,
           selectedProvider: "global",
-          marginType: "percentage",
           percentageValue: "5",
-          fixedAmountValue: "",
         });
       });
 
