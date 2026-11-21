@@ -17,12 +17,13 @@ describe("HealthCheckComponent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLatestHealthChecksCall.mockResolvedValue({ latest_health_checks: {} });
-    mockIndividualModelHealthCheckCall.mockResolvedValue({
+    const mockHealthSummary = {
       healthy_count: 1,
       unhealthy_count: 0,
       healthy_endpoints: [],
       unhealthy_endpoints: [],
-    });
+    };
+    mockIndividualModelHealthCheckCall.mockResolvedValue(mockHealthSummary);
   });
 
   it("should render the health check section", async () => {

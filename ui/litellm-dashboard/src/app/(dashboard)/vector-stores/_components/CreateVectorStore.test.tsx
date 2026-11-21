@@ -124,12 +124,13 @@ describe("CreateVectorStore", () => {
 
   it("should call ragIngestCall when create button is clicked", async () => {
     const mockRagIngestCall = vi.spyOn(networking, "ragIngestCall");
-    mockRagIngestCall.mockResolvedValue({
+    const mockVectorStoreFile = {
       id: "test-id",
       status: "completed",
       vector_store_id: "vs_123",
       file_id: "file_123",
-    });
+    };
+    mockRagIngestCall.mockResolvedValue(mockVectorStoreFile);
 
     const onSuccess = vi.fn();
     render(<CreateVectorStore accessToken="test-token" onSuccess={onSuccess} />);
@@ -171,12 +172,13 @@ describe("CreateVectorStore", () => {
 
   it("should display success message after successful creation", async () => {
     const mockRagIngestCall = vi.spyOn(networking, "ragIngestCall");
-    mockRagIngestCall.mockResolvedValue({
+    const initialVectorStoreFile = {
       id: "test-id",
       status: "completed",
       vector_store_id: "vs_123",
       file_id: "file_123",
-    });
+    };
+    mockRagIngestCall.mockResolvedValue(initialVectorStoreFile);
 
     render(<CreateVectorStore accessToken="test-token" />);
 

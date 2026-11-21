@@ -100,7 +100,7 @@ describe("TeamMembersComponent", () => {
       refetch: vi.fn(),
     } as any);
 
-    vi.mocked(useAuthorized).mockReturnValue({
+    const mockAuthorization = {
       isLoading: false,
       isAuthorized: true,
       userId: "test-user-id",
@@ -111,7 +111,8 @@ describe("TeamMembersComponent", () => {
       premiumUser: false,
       disabledPersonalKeyCreation: null,
       showSSOBanner: false,
-    });
+    };
+    vi.mocked(useAuthorized).mockReturnValue(mockAuthorization);
   });
 
   it("should render", () => {

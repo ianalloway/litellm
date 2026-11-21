@@ -36,14 +36,13 @@ describe("NotificationManager", () => {
 
       NotificationManager.fromBackend(error);
 
-      expect(notification.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Already Exists",
-          description: "Key with alias 'test10' already exists.",
-          duration: 6,
-          placement: "topRight",
-        }),
-      );
+      const expectedNotification = {
+        message: "Already Exists",
+        description: "Key with alias 'test10' already exists.",
+        duration: 6,
+        placement: "topRight",
+      };
+      expect(notification.error).toHaveBeenCalledWith(expect.objectContaining(expectedNotification));
     });
   });
 
