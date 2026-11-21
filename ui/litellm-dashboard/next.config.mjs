@@ -7,6 +7,11 @@ const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   output: "export",
+  experimental: {
+    // Keep Next.js production type checking on its programmatic compiler,
+    // which delegates test fixtures to the dashboard's Vitest suite.
+    useTypeScriptCli: false,
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
