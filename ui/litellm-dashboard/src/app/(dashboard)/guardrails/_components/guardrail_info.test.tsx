@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+import type ContentFilterManager from "./content_filter/ContentFilterManager";
 import * as networking from "@/components/networking";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,16 +13,20 @@ vi.mock("@/components/networking", () => ({
   updateGuardrailCall: vi.fn(),
 }));
 
+type EditorProps = Pick<ComponentProps<typeof ContentFilterManager>, "onUnsavedChanges" | "onDataChange" | "isEditing">;
+const newPattern = { id: "pattern-1", type: "prebuilt", name: "new_pattern", action: "MASK" } as const;
+const newBlockedWord = { id: "word-1", keyword: "new_word", action: "BLOCK" } as const;
+
 // Mock ContentFilterManager
 vi.mock("./content_filter/ContentFilterManager", () => ({
   __esModule: true,
-  default: ({ onUnsavedChanges, onDataChange, isEditing }: any) => (
+  default: ({ onUnsavedChanges, onDataChange, isEditing }: EditorProps) => (
     <div data-testid="mock-content-filter-manager">
       {isEditing && (
         <button
           onClick={() => {
-            onUnsavedChanges(true);
-            onDataChange?.(["new_pattern"], ["new_word"], []);
+            onUnsavedChanges?.(true);
+            onDataChange?.([newPattern], [newBlockedWord], []);
           }}
         >
           Simulate Change
@@ -28,12 +34,31 @@ vi.mock("./content_filter/ContentFilterManager", () => ({
       )}
     </div>
   ),
-  formatContentFilterDataForAPI: (patterns: any[], blockedWords: any[], categories?: any[]) => ({
+  formatContentFilterDataForAPI: (
+    patterns: readonly unknown[],
+    blockedWords: readonly unknown[],
+    categories?: readonly unknown[],
+  ) => ({
     patterns,
     blocked_words: blockedWords,
     categories: categories ?? [],
   }),
 }));
+
+const guardrail = {
+  guardrail_id: "123",
+  guardrail_name: "Test Guardrail",
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
+  guardrail_definition_location: "database",
+  litellm_params: { guardrail: "presidio", mode: "pre_call", default_on: true },
+};
+const uiSettings = {
+  supported_entities: ["PERSON", "EMAIL"],
+  supported_actions: ["MASK", "REDACT"],
+  pii_entity_categories: [],
+  supported_modes: ["pre_call", "post_call"],
+};
 
 describe("Guardrail Info", () => {
   afterEach(() => {
@@ -42,25 +67,9 @@ describe("Guardrail Info", () => {
 
   it("should render the guardrail info after loading", async () => {
     // Mock the network responses
-    vi.mocked(networking.getGuardrailInfo).mockResolvedValue({
-      guardrail_id: "123",
-      guardrail_name: "Test Guardrail",
-      litellm_params: {
-        guardrail: "presidio",
-        mode: "pre_call",
-        default_on: true,
-      },
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z",
-      guardrail_definition_location: "database",
-    });
+    vi.mocked(networking.getGuardrailInfo).mockResolvedValue(guardrail);
 
-    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue({
-      supported_entities: ["PERSON", "EMAIL"],
-      supported_actions: ["MASK", "REDACT"],
-      pii_entity_categories: [],
-      supported_modes: ["pre_call", "post_call"],
-    });
+    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue(uiSettings);
 
     vi.mocked(networking.getGuardrailProviderSpecificParams).mockResolvedValue({});
 
@@ -83,25 +92,9 @@ describe("Guardrail Info", () => {
 
   it("should not render the edit button for config guardrails", async () => {
     // Mock the network responses
-    vi.mocked(networking.getGuardrailInfo).mockResolvedValue({
-      guardrail_id: "123",
-      guardrail_name: "Test Guardrail",
-      litellm_params: {
-        guardrail: "presidio",
-        mode: "pre_call",
-        default_on: true,
-      },
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z",
-      guardrail_definition_location: "config",
-    });
+    vi.mocked(networking.getGuardrailInfo).mockResolvedValue({ ...guardrail, guardrail_definition_location: "config" });
 
-    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue({
-      supported_entities: ["PERSON", "EMAIL"],
-      supported_actions: ["MASK", "REDACT"],
-      pii_entity_categories: [],
-      supported_modes: ["pre_call", "post_call"],
-    });
+    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue(uiSettings);
 
     vi.mocked(networking.getGuardrailProviderSpecificParams).mockResolvedValue({});
 
@@ -138,8 +131,7 @@ describe("Guardrail Info", () => {
   it("should render the guardrail info", async () => {
     // Mock the network responses
     vi.mocked(networking.getGuardrailInfo).mockResolvedValue({
-      guardrail_id: "123",
-      guardrail_name: "Test Guardrail",
+      ...guardrail,
       litellm_params: {
         guardrail: "presidio",
         mode: "pre_call",
@@ -149,17 +141,9 @@ describe("Guardrail Info", () => {
           EMAIL: "REDACT",
         },
       },
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z",
-      guardrail_definition_location: "database",
     });
 
-    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue({
-      supported_entities: ["PERSON", "EMAIL"],
-      supported_actions: ["MASK", "REDACT"],
-      pii_entity_categories: [],
-      supported_modes: ["pre_call", "post_call"],
-    });
+    vi.mocked(networking.getGuardrailUISettings).mockResolvedValue(uiSettings);
 
     vi.mocked(networking.getGuardrailProviderSpecificParams).mockResolvedValue({});
 
@@ -174,7 +158,7 @@ describe("Guardrail Info", () => {
   it("should handle content filter updates correctly", async () => {
     // Mock the network responses
     vi.mocked(networking.getGuardrailInfo).mockResolvedValue({
-      guardrail_id: "123",
+      ...guardrail,
       guardrail_name: "Content Filter Guardrail",
       litellm_params: {
         guardrail: "litellm_content_filter",
@@ -183,16 +167,12 @@ describe("Guardrail Info", () => {
         patterns: ["initial_pattern"],
         blocked_words: ["initial_word"],
       },
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z",
-      guardrail_definition_location: "database",
     });
 
     vi.mocked(networking.getGuardrailUISettings).mockResolvedValue({
+      ...uiSettings,
       supported_entities: [],
       supported_actions: [],
-      pii_entity_categories: [],
-      supported_modes: ["pre_call", "post_call"],
     });
 
     vi.mocked(networking.getGuardrailProviderSpecificParams).mockResolvedValue({});
@@ -230,7 +210,7 @@ describe("Guardrail Info", () => {
 
     // Verify call did NOT include patterns or blocked_words (because no changes)
     // updateGuardrailCall(accessToken, guardrailId, updateData) -> index 2 is updateData
-    const firstCallArgs: any = vi.mocked(networking.updateGuardrailCall).mock.calls[0][2];
+    const firstCallArgs = vi.mocked(networking.updateGuardrailCall).mock.calls[0][2];
 
     // Verify attributes that definitely changed
     expect(firstCallArgs.guardrail_name).toBe("Updated Name");
@@ -263,9 +243,9 @@ describe("Guardrail Info", () => {
     });
 
     // Verify call INCLUDES patterns and blocked_words
-    const secondCallArgs: any = vi.mocked(networking.updateGuardrailCall).mock.calls[0][2];
+    const secondCallArgs = vi.mocked(networking.updateGuardrailCall).mock.calls[0][2];
     expect(secondCallArgs.litellm_params).toBeDefined();
-    expect(secondCallArgs.litellm_params.patterns).toEqual(["new_pattern"]);
-    expect(secondCallArgs.litellm_params.blocked_words).toEqual(["new_word"]);
+    expect(secondCallArgs.litellm_params?.patterns).toEqual([newPattern]);
+    expect(secondCallArgs.litellm_params?.blocked_words).toEqual([newBlockedWord]);
   });
 });

@@ -84,6 +84,14 @@ const clearCookie = () => {
   document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 };
 
+const defaultUiConfig = {
+  server_root_path: "/",
+  proxy_base_url: null,
+  auto_redirect_to_sso: false,
+  admin_ui_disabled: false,
+  sso_configured: false,
+};
+
 describe("useAuthorized", () => {
   const originalLocation = window.location;
 
@@ -118,13 +126,7 @@ describe("useAuthorized", () => {
   });
 
   it("should decode the token and expose user details", async () => {
-    getUiConfigMock.mockResolvedValue({
-      server_root_path: "/",
-      proxy_base_url: null,
-      auto_redirect_to_sso: false,
-      admin_ui_disabled: false,
-      sso_configured: false,
-    });
+    getUiConfigMock.mockResolvedValue(defaultUiConfig);
 
     const decodedPayload = {
       key: "api-key-123",
@@ -160,13 +162,7 @@ describe("useAuthorized", () => {
   });
 
   it("should clear cookies and redirect on an invalid token", async () => {
-    getUiConfigMock.mockResolvedValue({
-      server_root_path: "/",
-      proxy_base_url: null,
-      auto_redirect_to_sso: false,
-      admin_ui_disabled: false,
-      sso_configured: false,
-    });
+    getUiConfigMock.mockResolvedValue(defaultUiConfig);
 
     decodeTokenMock.mockReturnValue(null);
     checkTokenValidityMock.mockReturnValue(false);
@@ -185,13 +181,7 @@ describe("useAuthorized", () => {
   });
 
   it("should redirect even with valid token if admin_ui_disabled is true", async () => {
-    getUiConfigMock.mockResolvedValue({
-      server_root_path: "/",
-      proxy_base_url: null,
-      auto_redirect_to_sso: false,
-      admin_ui_disabled: true,
-      sso_configured: false,
-    });
+    getUiConfigMock.mockResolvedValue({ ...defaultUiConfig, admin_ui_disabled: true });
 
     const decodedPayload = {
       key: "api-key-123",
@@ -221,13 +211,7 @@ describe("useAuthorized", () => {
   });
 
   it("should redirect when token is missing", async () => {
-    getUiConfigMock.mockResolvedValue({
-      server_root_path: "/",
-      proxy_base_url: null,
-      auto_redirect_to_sso: false,
-      admin_ui_disabled: false,
-      sso_configured: false,
-    });
+    getUiConfigMock.mockResolvedValue(defaultUiConfig);
 
     decodeTokenMock.mockReturnValue(null);
     checkTokenValidityMock.mockReturnValue(false);
@@ -244,13 +228,7 @@ describe("useAuthorized", () => {
   });
 
   it("should clear cookies and redirect when token is expired", async () => {
-    getUiConfigMock.mockResolvedValue({
-      server_root_path: "/",
-      proxy_base_url: null,
-      auto_redirect_to_sso: false,
-      admin_ui_disabled: false,
-      sso_configured: false,
-    });
+    getUiConfigMock.mockResolvedValue(defaultUiConfig);
 
     const decodedPayload = {
       key: "api-key-123",
