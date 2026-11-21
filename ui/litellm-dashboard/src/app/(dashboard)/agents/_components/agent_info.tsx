@@ -1,3 +1,4 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { Card, Title, Text, Button as TremorButton, Tab, TabGroup, TabList, TabPanel, TabPanels } from "@tremor/react";
 import { Form, Input, InputNumber, Button as AntButton, Spin, Descriptions, Divider } from "antd";
@@ -83,9 +84,7 @@ const AgentInfoView: React.FC<AgentInfoViewProps> = ({ agentId, onClose, accessT
     }
   }, [accessToken, agentId, agentTypeMetadata, form]);
 
-  useEffect(() => {
-    fetchAgentInfo();
-  }, [agentId, accessToken, fetchAgentInfo]);
+  useDeferredRequest(fetchAgentInfo);
 
   // Re-parse form when metadata is loaded
   useEffect(() => {

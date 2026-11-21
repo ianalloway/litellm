@@ -10,7 +10,10 @@ const ConditionalPublicModelName: React.FC = () => {
 
   // Watch the 'model' field for changes and ensure it's always an array
   const modelValue = Form.useWatch("model", form);
-  const selectedModels = useMemo(() => Array.isArray(modelValue) ? modelValue : modelValue ? [modelValue] : [], [modelValue]);
+  const selectedModels = useMemo(() => {
+    if (Array.isArray(modelValue)) return modelValue;
+    return modelValue ? [modelValue] : [];
+  }, [modelValue]);
   const customModelName = Form.useWatch("custom_model_name", form);
   const showPublicModelName = !selectedModels.includes("all-wildcard");
   const selectedProvider = Form.useWatch("custom_llm_provider", form);

@@ -1,3 +1,4 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { Modal, Spin, Radio, Select } from "antd";
 import { Button, TextInput } from "@tremor/react";
@@ -86,11 +87,7 @@ const TemplateParameterModal: React.FC<TemplateParameterModalProps> = ({
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    if (visible && hasEnrichment && competitorMode === "ai" && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [visible, hasEnrichment, competitorMode, availableModels.length, loadModels]);
+  useDeferredRequest(loadModels, visible && hasEnrichment && competitorMode === "ai" && availableModels.length === 0);
 
   const handleGenerateNames = async () => {
     if (!accessToken || !selectedModel || !template) return;

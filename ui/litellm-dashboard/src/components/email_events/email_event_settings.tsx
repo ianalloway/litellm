@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState } from "react";
 import { Card, Text, Button } from "@tremor/react";
 import { Typography, Divider, Spin, Checkbox } from "antd";
 import NotificationsManager from "../molecules/notifications_manager";
@@ -33,9 +34,7 @@ const EmailEventSettings: React.FC<EmailEventSettingsProps> = ({ accessToken }) 
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    fetchEventSettings();
-  }, [accessToken, fetchEventSettings]);
+  useDeferredRequest(fetchEventSettings);
 
   const handleCheckboxChange = (event: EmailEvent, checked: boolean) => {
     const updatedSettings = eventSettings.map((setting) =>

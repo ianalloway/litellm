@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState } from "react";
 import { Card, Title, Text, TextInput, Button } from "@tremor/react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getProxyBaseUrl, getGlobalLitellmHeaderName } from "@/components/networking";
@@ -40,11 +41,7 @@ const UIThemeSettings: React.FC<UIThemeSettingsProps> = ({ userID, userRole, acc
     }
   }, [accessToken, setFaviconUrl, setLogoUrl]);
 
-  useEffect(() => {
-    if (accessToken) {
-      fetchThemeSettings();
-    }
-  }, [accessToken, fetchThemeSettings]);
+  useDeferredRequest(fetchThemeSettings, Boolean(accessToken));
 
   const handleSave = async () => {
     setLoading(true);

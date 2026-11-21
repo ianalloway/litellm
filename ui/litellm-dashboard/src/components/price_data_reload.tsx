@@ -1,3 +1,4 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import React, { useCallback, useState, useEffect } from "react";
 import { Button, Popconfirm, Modal, InputNumber, Space, Typography, Tag, Card, Tooltip, Divider } from "antd";
 import {
@@ -101,9 +102,10 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
     }
   }, [accessToken]);
 
+  useDeferredRequest(fetchReloadStatus);
+  useDeferredRequest(fetchSourceInfo);
+
   useEffect(() => {
-    fetchReloadStatus();
-    fetchSourceInfo();
 
     // Refresh status every 30 seconds to keep it up to date
     const interval = setInterval(() => {

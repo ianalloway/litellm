@@ -197,7 +197,8 @@ export default function AgentBuilderView({
   // Draft for new agent
   const [draftName, setDraftName] = useState("");
   const [draftSystemPrompt, setDraftSystemPrompt] = useState("");
-  const [draftUnderlyingModel, setDraftUnderlyingModel] = useState<string | undefined>(undefined);
+  const [selectedDraftModel, setDraftUnderlyingModel] = useState<string | undefined>(undefined);
+  const draftUnderlyingModel = selectedDraftModel ?? modelGroups[0]?.model_group;
   const [draftTemperature, setDraftTemperature] = useState(0.7);
   const [draftMaxTokens, setDraftMaxTokens] = useState(4096);
   const [draftTools, setDraftTools] = useState<MCPToolEntry[]>([]);
@@ -220,11 +221,10 @@ export default function AgentBuilderView({
     try {
       const list = await fetchAvailableAgentModels(accessToken, userID, userRole);
       setAgentModels(list);
-      setSelectedId((id) =>
-        id === NEW_AGENT_ID || list.some((a) => getAgentSelectionKey(a) === id)
-          ? id
-          : list.length > 0 ? getAgentSelectionKey(list[0]) : null,
-      );
+      setSelectedId((id) => {
+        if (id === NEW_AGENT_ID || list.some((agent) => getAgentSelectionKey(agent) === id)) return id;
+        return list.length ? getAgentSelectionKey(list[0]) : null;
+      });
       return list;
     } catch (e) {
       console.error(e);
@@ -240,9 +240,6 @@ export default function AgentBuilderView({
     try {
       const models = await fetchAvailableModels(effectiveApiKey);
       setModelGroups(models);
-      if (models.length > 0) {
-        setDraftUnderlyingModel((model) => model || models[0].model_group);
-      }
     } catch (e) {
       console.error(e);
     }
@@ -302,10 +299,6 @@ export default function AgentBuilderView({
     }
   }, [selectedAgent, isNewAgent]);
 
-  // Fill an unspecified model after the catalog arrives, preserving manual choices.
-  useEffect(() => {
-    if (modelGroups.length > 0) setDraftUnderlyingModel((current) => current ?? modelGroups[0].model_group);
-  }, [modelGroups, selectedAgent]);
 
   const selectedMCPServerIds = getServerIdsFromTools(draftTools, mcpServers);
 

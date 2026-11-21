@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState } from "react";
 import { Select, Button, Card, Typography, Spin, Tag } from "antd";
 import { SaveOutlined, PlusOutlined } from "@ant-design/icons";
 import { DeprecationBanner } from "@/components/DeprecationBanner";
@@ -56,10 +57,8 @@ const MCPNetworkSettings: React.FC<MCPNetworkSettingsProps> = ({ accessToken }) 
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    loadSettings();
-    detectCurrentIp();
-  }, [accessToken, detectCurrentIp, loadSettings]);
+  useDeferredRequest(loadSettings);
+  useDeferredRequest(detectCurrentIp);
 
   const handleSave = async () => {
     if (!accessToken) return;

@@ -1,5 +1,6 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import { Drawer, List, Skeleton, Tag, Typography } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { getPromptVersions, PromptSpec } from "@/components/networking";
 
 const { Text } = Typography;
@@ -39,11 +40,7 @@ const VersionHistorySidePanel: React.FC<VersionHistorySidePanelProps> = ({
     }
   }, [accessToken, promptId]);
 
-  useEffect(() => {
-    if (isOpen && accessToken && promptId) {
-      fetchVersions();
-    }
-  }, [isOpen, accessToken, promptId, fetchVersions]);
+  useDeferredRequest(fetchVersions, Boolean(isOpen && accessToken && promptId));
 
   const getVersionNumber = (prompt: PromptSpec) => {
     // Use explicit version field if available, otherwise try to extract from litellm_params.prompt_id

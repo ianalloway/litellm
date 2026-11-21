@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useMemo, useState } from "react";
 import { Modal, Spin, Checkbox, Select, Input, Typography, Tooltip } from "antd";
 import { Button, Card } from "@tremor/react";
 import {
@@ -104,11 +105,7 @@ const AiSuggestionModal: React.FC<AiSuggestionModalProps> = ({
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    if (visible && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [availableModels.length, loadModels, visible]);
+  useDeferredRequest(loadModels, visible && availableModels.length === 0);
 
   const resetState = () => {
     setAttackExamples([""]);

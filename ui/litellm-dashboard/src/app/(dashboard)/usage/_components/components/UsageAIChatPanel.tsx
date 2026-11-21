@@ -1,3 +1,4 @@
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Select, Input, Spin } from "antd";
 import ReactMarkdown from "react-markdown";
@@ -132,11 +133,7 @@ const UsageAIChatPanel: React.FC<UsageAIChatPanelProps> = ({ open, onClose, acce
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    if (open && availableModels.length === 0) {
-      loadModels();
-    }
-  }, [availableModels.length, loadModels, open]);
+  useDeferredRequest(loadModels, open && availableModels.length === 0);
 
   const handleSend = async () => {
     if (!accessToken || !inputText.trim() || isLoading) return;

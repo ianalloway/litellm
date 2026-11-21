@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useDeferredRequest } from "@/hooks/useDeferredRequest";
+import React, { useCallback, useState } from "react";
 import { Text, Button, Callout, TextInput } from "@tremor/react";
 import { Modal, Form, Spin, Select } from "antd";
 import { getGlobalLitellmHeaderName } from "@/components/networking";
@@ -64,11 +65,7 @@ const CloudZeroExportModal: React.FC<CloudZeroExportModalProps> = ({ isOpen, onC
     }
   }, [accessToken, form]);
 
-  useEffect(() => {
-    if (isOpen && accessToken) {
-      loadExistingSettings();
-    }
-  }, [isOpen, accessToken, loadExistingSettings]);
+  useDeferredRequest(loadExistingSettings, Boolean(isOpen && accessToken));
 
   const handleSaveCloudZeroSettings = async (values: CloudZeroSettings) => {
     if (!accessToken) {

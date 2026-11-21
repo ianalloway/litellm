@@ -519,7 +519,7 @@ export default function ComplianceUI({
     } finally {
       setIsQuickTesting(false);
     }
-  }, [accessToken, quickTestInput, selectedPolicies, selectedGuardrails, backendMode, fixedModel, requestProxyBaseUrl]);
+  }, [accessToken, quickTestInput, selectedPolicies, selectedGuardrails, backendMode, fixedModel, requestProxyBaseUrl, setQuickTestMessages, setQuickTestInput, setIsQuickTesting]);
 
   const handleQuickTestKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -616,7 +616,7 @@ export default function ComplianceUI({
       setIsRunning(false);
       batchAbortControllerRef.current = null;
     }
-  }, [accessToken, selectedPromptIds, selectedPolicies, selectedGuardrails, allFrameworks, backendMode, fixedModel]);
+  }, [accessToken, selectedPromptIds, selectedPolicies, selectedGuardrails, allFrameworks, backendMode, fixedModel, setIsRunning, setResultFilter, setRightTab, setTestResults]);
 
   const completedResults = testResults.filter((r) => r.status === "complete");
   const matchCount = completedResults.filter((r) => r.isMatch).length;
