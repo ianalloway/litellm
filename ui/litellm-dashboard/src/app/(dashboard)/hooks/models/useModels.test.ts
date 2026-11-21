@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import React, { ReactNode } from "react";
@@ -60,23 +61,14 @@ describe("useModelsInfo", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render without crashing", () => {
-    (modelInfoCall as any).mockResolvedValue(mockPaginatedModelInfoResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPaginatedModelInfoResponse);
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -84,7 +76,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should return models data when query is successful", async () => {
-    (modelInfoCall as any).mockResolvedValue(mockPaginatedModelInfoResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPaginatedModelInfoResponse);
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -114,7 +106,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should use custom page and size parameters", async () => {
-    (modelInfoCall as any).mockResolvedValue(mockPaginatedModelInfoResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPaginatedModelInfoResponse);
 
     const { result } = renderHook(() => useModelsInfo(2, 25), { wrapper });
 
@@ -140,7 +132,7 @@ describe("useModelsInfo", () => {
     const errorMessage = "Failed to fetch models";
     const testError = new Error(errorMessage);
 
-    (modelInfoCall as any).mockRejectedValue(testError);
+    vi.mocked(modelInfoCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -157,16 +149,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -177,16 +160,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should not execute query when userId is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -197,16 +171,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should not execute query when userRole is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -217,16 +182,7 @@ describe("useModelsInfo", () => {
   });
 
   it("should not execute query when all required auth values are missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useModelsInfo(), { wrapper });
 
@@ -251,23 +207,14 @@ describe("useModelHub", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render without crashing", () => {
-    (modelHubCall as any).mockResolvedValue({ data: [] });
+    vi.mocked(modelHubCall).mockResolvedValue({ data: [] });
 
     const { result } = renderHook(() => useModelHub(), { wrapper });
 
@@ -276,7 +223,7 @@ describe("useModelHub", () => {
 
   it("should return model hub data when query is successful", async () => {
     const mockHubData = { data: [{ id: "hub-1", name: "Test Hub" }] };
-    (modelHubCall as any).mockResolvedValue(mockHubData);
+    vi.mocked(modelHubCall).mockResolvedValue(mockHubData);
 
     const { result } = renderHook(() => useModelHub(), { wrapper });
 
@@ -298,7 +245,7 @@ describe("useModelHub", () => {
     const errorMessage = "Failed to fetch model hub";
     const testError = new Error(errorMessage);
 
-    (modelHubCall as any).mockRejectedValue(testError);
+    vi.mocked(modelHubCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useModelHub(), { wrapper });
 
@@ -315,16 +262,7 @@ describe("useModelHub", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useModelHub(), { wrapper });
 
@@ -349,23 +287,14 @@ describe("useAllProxyModels", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render without crashing", () => {
-    (modelAvailableCall as any).mockResolvedValue(mockAllProxyModelsResponse);
+    vi.mocked(modelAvailableCall).mockResolvedValue(mockAllProxyModelsResponse);
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -373,7 +302,7 @@ describe("useAllProxyModels", () => {
   });
 
   it("should return all proxy models data when query is successful", async () => {
-    (modelAvailableCall as any).mockResolvedValue(mockAllProxyModelsResponse);
+    vi.mocked(modelAvailableCall).mockResolvedValue(mockAllProxyModelsResponse);
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -404,7 +333,7 @@ describe("useAllProxyModels", () => {
     const errorMessage = "Failed to fetch proxy models";
     const testError = new Error(errorMessage);
 
-    (modelAvailableCall as any).mockRejectedValue(testError);
+    vi.mocked(modelAvailableCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -421,16 +350,7 @@ describe("useAllProxyModels", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -441,16 +361,7 @@ describe("useAllProxyModels", () => {
   });
 
   it("should not execute query when userId is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -461,16 +372,7 @@ describe("useAllProxyModels", () => {
   });
 
   it("should not execute query when userRole is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useAllProxyModels(), { wrapper });
 
@@ -495,23 +397,14 @@ describe("useUserModels", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("maps the available-models response to a list of model ids", async () => {
-    (modelAvailableCall as any).mockResolvedValue({
+    vi.mocked(modelAvailableCall).mockResolvedValue({
       data: [{ id: "gpt-4" }, { id: "claude-3-opus" }],
     });
 
@@ -527,16 +420,7 @@ describe("useUserModels", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useUserModels(), { wrapper });
 
@@ -559,23 +443,14 @@ describe("useSelectedTeamModels", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should render without crashing", () => {
-    (modelAvailableCall as any).mockResolvedValue(mockAllProxyModelsResponse);
+    vi.mocked(modelAvailableCall).mockResolvedValue(mockAllProxyModelsResponse);
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -583,7 +458,7 @@ describe("useSelectedTeamModels", () => {
   });
 
   it("should return team models data when query is successful", async () => {
-    (modelAvailableCall as any).mockResolvedValue(mockAllProxyModelsResponse);
+    vi.mocked(modelAvailableCall).mockResolvedValue(mockAllProxyModelsResponse);
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -605,7 +480,7 @@ describe("useSelectedTeamModels", () => {
     const errorMessage = "Failed to fetch team models";
     const testError = new Error(errorMessage);
 
-    (modelAvailableCall as any).mockRejectedValue(testError);
+    vi.mocked(modelAvailableCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -631,16 +506,7 @@ describe("useSelectedTeamModels", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -651,16 +517,7 @@ describe("useSelectedTeamModels", () => {
   });
 
   it("should not execute query when userId is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -671,16 +528,7 @@ describe("useSelectedTeamModels", () => {
   });
 
   it("should not execute query when userRole is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useSelectedTeamModels("team-1"), { wrapper });
 
@@ -730,23 +578,14 @@ describe("useInfiniteModelInfo", () => {
 
     vi.clearAllMocks();
 
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 
   it("should return defined result", () => {
-    (modelInfoCall as any).mockResolvedValue(mockPageOneResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPageOneResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -759,7 +598,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should return paginated data and call modelInfoCall with page 1 initially", async () => {
-    (modelInfoCall as any).mockResolvedValue(mockPageOneResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPageOneResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -778,7 +617,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should use custom size parameter", async () => {
-    (modelInfoCall as any).mockResolvedValue(mockPageOneResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPageOneResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(25), { wrapper });
 
@@ -790,7 +629,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should pass search parameter to modelInfoCall", async () => {
-    (modelInfoCall as any).mockResolvedValue(mockPageOneResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(mockPageOneResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(50, "gpt"), { wrapper });
 
@@ -802,7 +641,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should fetch next page when fetchNextPage is called", async () => {
-    (modelInfoCall as any).mockResolvedValueOnce(mockPageOneResponse).mockResolvedValueOnce(mockPageTwoResponse);
+    vi.mocked(modelInfoCall).mockResolvedValueOnce(mockPageOneResponse).mockResolvedValueOnce(mockPageTwoResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -828,7 +667,7 @@ describe("useInfiniteModelInfo", () => {
       current_page: 1,
       total_pages: 1,
     };
-    (modelInfoCall as any).mockResolvedValue(lastPageResponse);
+    vi.mocked(modelInfoCall).mockResolvedValue(lastPageResponse);
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -842,7 +681,7 @@ describe("useInfiniteModelInfo", () => {
   it("should handle error when modelInfoCall fails", async () => {
     const errorMessage = "Failed to fetch models";
     const testError = new Error(errorMessage);
-    (modelInfoCall as any).mockRejectedValue(testError);
+    vi.mocked(modelInfoCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -859,16 +698,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should not execute query when accessToken is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -879,16 +709,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should not execute query when userId is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 
@@ -899,16 +720,7 @@ describe("useInfiniteModelInfo", () => {
   });
 
   it("should not execute query when userRole is missing", () => {
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useInfiniteModelInfo(), { wrapper });
 

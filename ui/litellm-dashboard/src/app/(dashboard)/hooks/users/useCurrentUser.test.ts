@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,17 +10,6 @@ import type { UserInfoV2Response } from "@/components/networking";
 // Mock the networking function
 vi.mock("@/components/networking", () => ({
   userGetInfoV2: vi.fn(),
-}));
-
-// Mock the queryKeysFactory - we'll mock the specific return value
-vi.mock("../common/queryKeysFactory", () => ({
-  createQueryKeys: vi.fn((resource: string) => ({
-    all: [resource],
-    lists: () => [resource, "list"],
-    list: (params?: any) => [resource, "list", { params }],
-    details: () => [resource, "detail"],
-    detail: (uid: string) => [resource, "detail", uid],
-  })),
 }));
 
 // Mock useAuthorized hook - we can override this in individual tests
@@ -62,16 +52,7 @@ describe("useCurrentUser", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -79,7 +60,7 @@ describe("useCurrentUser", () => {
 
   it("should return user info data when query is successful", async () => {
     // Mock successful API call - v2 returns user object directly
-    (userGetInfoV2 as any).mockResolvedValue(mockUserInfoV2Response);
+    vi.mocked(userGetInfoV2).mockResolvedValue(mockUserInfoV2Response);
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -105,7 +86,7 @@ describe("useCurrentUser", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (userGetInfoV2 as any).mockRejectedValue(testError);
+    vi.mocked(userGetInfoV2).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -126,16 +107,7 @@ describe("useCurrentUser", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -150,16 +122,7 @@ describe("useCurrentUser", () => {
 
   it("should not execute query when userId is missing", async () => {
     // Mock missing userId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -174,16 +137,7 @@ describe("useCurrentUser", () => {
 
   it("should not execute query when all auth values are missing", async () => {
     // Mock all auth values missing
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -198,7 +152,7 @@ describe("useCurrentUser", () => {
 
   it("should execute query when all auth values are present", async () => {
     // Mock successful API call
-    (userGetInfoV2 as any).mockResolvedValue(mockUserInfoV2Response);
+    vi.mocked(userGetInfoV2).mockResolvedValue(mockUserInfoV2Response);
 
     // Ensure all auth values are present (already set in beforeEach)
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
@@ -216,7 +170,7 @@ describe("useCurrentUser", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (userGetInfoV2 as any).mockRejectedValue(timeoutError);
+    vi.mocked(userGetInfoV2).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 

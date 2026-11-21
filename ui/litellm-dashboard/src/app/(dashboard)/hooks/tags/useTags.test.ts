@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -75,16 +76,7 @@ describe("useTags", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -92,7 +84,7 @@ describe("useTags", () => {
 
   it("should return tags data when query is successful", async () => {
     // Mock successful API call
-    (tagListCall as any).mockResolvedValue(mockTags);
+    vi.mocked(tagListCall).mockResolvedValue(mockTags);
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -117,7 +109,7 @@ describe("useTags", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (tagListCall as any).mockRejectedValue(testError);
+    vi.mocked(tagListCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -138,16 +130,7 @@ describe("useTags", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -162,16 +145,7 @@ describe("useTags", () => {
 
   it("should not execute query when userId is missing", async () => {
     // Mock missing userId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -186,16 +160,7 @@ describe("useTags", () => {
 
   it("should not execute query when userRole is missing", async () => {
     // Mock missing userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -210,16 +175,7 @@ describe("useTags", () => {
 
   it("should not execute query when all auth values are missing", async () => {
     // Mock all auth values missing
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -234,7 +190,7 @@ describe("useTags", () => {
 
   it("should execute query when all auth values are present", async () => {
     // Mock successful API call
-    (tagListCall as any).mockResolvedValue(mockTags);
+    vi.mocked(tagListCall).mockResolvedValue(mockTags);
 
     // Ensure all auth values are present (already set in beforeEach)
     const { result } = renderHook(() => useTags(), { wrapper });
@@ -250,7 +206,7 @@ describe("useTags", () => {
 
   it("should return empty object when API returns empty data", async () => {
     // Mock API returning empty object
-    (tagListCall as any).mockResolvedValue({});
+    vi.mocked(tagListCall).mockResolvedValue({});
 
     const { result } = renderHook(() => useTags(), { wrapper });
 
@@ -268,7 +224,7 @@ describe("useTags", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (tagListCall as any).mockRejectedValue(timeoutError);
+    vi.mocked(tagListCall).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useTags(), { wrapper });
 

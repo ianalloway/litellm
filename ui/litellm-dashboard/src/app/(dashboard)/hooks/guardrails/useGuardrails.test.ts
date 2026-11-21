@@ -1,3 +1,4 @@
+import { createAuthFixture, createSignedOutAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -43,16 +44,7 @@ describe("useGuardrails", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -60,7 +52,7 @@ describe("useGuardrails", () => {
 
   it("should return guardrail names when query is successful", async () => {
     // Mock successful API call
-    (getGuardrailsList as any).mockResolvedValue(mockGuardrailsResponse);
+    vi.mocked(getGuardrailsList).mockResolvedValue(mockGuardrailsResponse);
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -85,7 +77,7 @@ describe("useGuardrails", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (getGuardrailsList as any).mockRejectedValue(testError);
+    vi.mocked(getGuardrailsList).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -106,16 +98,7 @@ describe("useGuardrails", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: "test-user-id",
-      userRole: "Admin",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -130,16 +113,7 @@ describe("useGuardrails", () => {
 
   it("should not execute query when userId is missing", async () => {
     // Mock missing userId
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: null,
-      userRole: "Admin",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userId: null }));
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -154,16 +128,7 @@ describe("useGuardrails", () => {
 
   it("should not execute query when userRole is missing", async () => {
     // Mock missing userRole
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userId: "test-user-id",
-      userRole: null,
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ userRole: null }));
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -178,16 +143,7 @@ describe("useGuardrails", () => {
 
   it("should not execute query when all auth values are missing", async () => {
     // Mock all auth values missing
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userId: null,
-      userRole: null,
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createSignedOutAuthFixture());
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -202,7 +158,7 @@ describe("useGuardrails", () => {
 
   it("should execute query when all auth values are present", async () => {
     // Mock successful API call
-    (getGuardrailsList as any).mockResolvedValue(mockGuardrailsResponse);
+    vi.mocked(getGuardrailsList).mockResolvedValue(mockGuardrailsResponse);
 
     // Ensure all auth values are present (already set in beforeEach)
     const { result } = renderHook(() => useGuardrails(), { wrapper });
@@ -218,7 +174,7 @@ describe("useGuardrails", () => {
 
   it("should return empty array when API returns empty guardrails", async () => {
     // Mock API returning empty guardrails array
-    (getGuardrailsList as any).mockResolvedValue({ guardrails: [] });
+    vi.mocked(getGuardrailsList).mockResolvedValue({ guardrails: [] });
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -236,7 +192,7 @@ describe("useGuardrails", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (getGuardrailsList as any).mockRejectedValue(timeoutError);
+    vi.mocked(getGuardrailsList).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -256,7 +212,7 @@ describe("useGuardrails", () => {
     const expectedNames = ["custom-guardrail-1", "custom-guardrail-2"];
 
     // Mock API call with custom data
-    (getGuardrailsList as any).mockResolvedValue(customGuardrailsResponse);
+    vi.mocked(getGuardrailsList).mockResolvedValue(customGuardrailsResponse);
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 
@@ -281,7 +237,7 @@ describe("useGuardrails", () => {
         { guardrail_name: "optional-guard-b" },
       ],
     };
-    (getGuardrailsList as any).mockResolvedValue(mockMixedResponse);
+    vi.mocked(getGuardrailsList).mockResolvedValue(mockMixedResponse);
 
     const { result } = renderHook(() => useGuardrails(), { wrapper });
 

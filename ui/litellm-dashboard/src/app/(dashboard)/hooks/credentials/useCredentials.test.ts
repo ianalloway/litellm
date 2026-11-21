@@ -1,3 +1,4 @@
+import { createAuthFixture } from "@/app/(dashboard)/hooks/__tests__/authFixture";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -58,16 +59,7 @@ describe("useCredentials", () => {
     vi.clearAllMocks();
 
     // Set default mock for useAuthorized (enabled state)
-    mockUseAuthorized.mockReturnValue({
-      accessToken: "test-access-token",
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: "test-token",
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture());
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -75,7 +67,7 @@ describe("useCredentials", () => {
 
   it("should return credentials data when query is successful", async () => {
     // Mock successful API call
-    (credentialListCall as any).mockResolvedValue(mockCredentialsResponse);
+    vi.mocked(credentialListCall).mockResolvedValue(mockCredentialsResponse);
 
     const { result } = renderHook(() => useCredentials(), { wrapper });
 
@@ -100,7 +92,7 @@ describe("useCredentials", () => {
     const testError = new Error(errorMessage);
 
     // Mock failed API call
-    (credentialListCall as any).mockRejectedValue(testError);
+    vi.mocked(credentialListCall).mockRejectedValue(testError);
 
     const { result } = renderHook(() => useCredentials(), { wrapper });
 
@@ -121,16 +113,7 @@ describe("useCredentials", () => {
 
   it("should not execute query when accessToken is missing", async () => {
     // Mock missing accessToken
-    mockUseAuthorized.mockReturnValue({
-      accessToken: null,
-      userRole: "Admin",
-      userId: "test-user-id",
-      token: null,
-      userEmail: "test@example.com",
-      premiumUser: false,
-      disabledPersonalKeyCreation: null,
-      showSSOBanner: false,
-    });
+    mockUseAuthorized.mockReturnValue(createAuthFixture({ accessToken: null, token: null }));
 
     const { result } = renderHook(() => useCredentials(), { wrapper });
 
@@ -145,7 +128,7 @@ describe("useCredentials", () => {
 
   it("should return empty credentials array when API returns empty data", async () => {
     // Mock API returning empty credentials array
-    (credentialListCall as any).mockResolvedValue({ credentials: [] });
+    vi.mocked(credentialListCall).mockResolvedValue({ credentials: [] });
 
     const { result } = renderHook(() => useCredentials(), { wrapper });
 
@@ -163,7 +146,7 @@ describe("useCredentials", () => {
     const timeoutError = new Error("Network timeout");
 
     // Mock network timeout
-    (credentialListCall as any).mockRejectedValue(timeoutError);
+    vi.mocked(credentialListCall).mockRejectedValue(timeoutError);
 
     const { result } = renderHook(() => useCredentials(), { wrapper });
 
@@ -178,7 +161,7 @@ describe("useCredentials", () => {
 
   it("should execute query when accessToken is present", async () => {
     // Mock successful API call
-    (credentialListCall as any).mockResolvedValue(mockCredentialsResponse);
+    vi.mocked(credentialListCall).mockResolvedValue(mockCredentialsResponse);
 
     // Ensure auth values are set (already done in beforeEach)
     const { result } = renderHook(() => useCredentials(), { wrapper });
