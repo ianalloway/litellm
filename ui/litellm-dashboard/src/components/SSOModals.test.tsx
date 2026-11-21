@@ -261,7 +261,7 @@ describe("SSOModals", () => {
       },
     };
 
-    (getSSOSettings as any).mockResolvedValue(mockSSOData);
+    vi.mocked(getSSOSettings).mockResolvedValue(mockSSOData);
 
     const TestWrapper = () => {
       const [form] = Form.useForm();
@@ -305,11 +305,11 @@ describe("SSOModals", () => {
 
   it("should submit form with role mappings enabled", async () => {
     const mockHandleShowInstructions = vi.fn();
-    (updateSSOSettings as any).mockResolvedValue({});
+    vi.mocked(updateSSOSettings).mockResolvedValue({});
     // Mock getSSOSettings to return empty data so form starts clean
-    (getSSOSettings as any).mockResolvedValue({ values: {} });
+    vi.mocked(getSSOSettings).mockResolvedValue({ values: {} });
 
-    let formInstance: any = null;
+    let formInstance!: ReturnType<typeof Form.useForm>[0];
 
     const TestWrapper = () => {
       const [form] = Form.useForm();
@@ -385,28 +385,29 @@ describe("SSOModals", () => {
     fireEvent.click(saveButton);
 
     // Verify the API was called with correct payload including role mappings
-    await waitFor(() => {
-      expect(updateSSOSettings).toHaveBeenCalledWith("test-token", {
-        sso_provider: "okta",
-        user_email: "admin@example.com",
-        proxy_base_url: "https://example.com",
-        generic_client_id: "test-client-id",
-        generic_client_secret: "test-client-secret",
-        generic_authorization_endpoint: "https://example.okta.com/authorize",
-        generic_token_endpoint: "https://example.okta.com/token",
-        generic_userinfo_endpoint: "https://example.okta.com/userinfo",
-        role_mappings: {
-          provider: "generic",
-          group_claim: "groups",
-          default_role: "internal_user",
-          roles: {
-            proxy_admin: ["admin-group", "super-admin"],
-            proxy_admin_viewer: [],
-            internal_user: [],
-            internal_user_viewer: [],
-          },
+    const expectedSettings = {
+      sso_provider: "okta",
+      user_email: "admin@example.com",
+      proxy_base_url: "https://example.com",
+      generic_client_id: "test-client-id",
+      generic_client_secret: "test-client-secret",
+      generic_authorization_endpoint: "https://example.okta.com/authorize",
+      generic_token_endpoint: "https://example.okta.com/token",
+      generic_userinfo_endpoint: "https://example.okta.com/userinfo",
+      role_mappings: {
+        provider: "generic",
+        group_claim: "groups",
+        default_role: "internal_user",
+        roles: {
+          proxy_admin: ["admin-group", "super-admin"],
+          proxy_admin_viewer: [],
+          internal_user: [],
+          internal_user_viewer: [],
         },
-      });
+      },
+    };
+    await waitFor(() => {
+      expect(updateSSOSettings).toHaveBeenCalledWith("test-token", expectedSettings);
     });
 
     expect(mockHandleShowInstructions).toHaveBeenCalled();
@@ -414,8 +415,8 @@ describe("SSOModals", () => {
 
   it("should show Clear button and clear SSO settings when configured", async () => {
     const mockHandleAddSSOOk = vi.fn();
-    (updateSSOSettings as any).mockResolvedValue({});
-    (NotificationsManager.success as any).mockImplementation(() => {});
+    vi.mocked(updateSSOSettings).mockResolvedValue({});
+    vi.mocked(NotificationsManager.success).mockImplementation(() => {});
 
     const TestWrapper = () => {
       const [form] = Form.useForm();
@@ -450,23 +451,24 @@ describe("SSOModals", () => {
     fireEvent.click(confirmButton);
 
     // Verify the clear API was called with null values
+    const expectedSettings = {
+      google_client_id: null,
+      google_client_secret: null,
+      microsoft_client_id: null,
+      microsoft_client_secret: null,
+      microsoft_tenant: null,
+      generic_client_id: null,
+      generic_client_secret: null,
+      generic_authorization_endpoint: null,
+      generic_token_endpoint: null,
+      generic_userinfo_endpoint: null,
+      proxy_base_url: null,
+      user_email: null,
+      sso_provider: null,
+      role_mappings: null,
+    };
     await waitFor(() => {
-      expect(updateSSOSettings).toHaveBeenCalledWith("test-token", {
-        google_client_id: null,
-        google_client_secret: null,
-        microsoft_client_id: null,
-        microsoft_client_secret: null,
-        microsoft_tenant: null,
-        generic_client_id: null,
-        generic_client_secret: null,
-        generic_authorization_endpoint: null,
-        generic_token_endpoint: null,
-        generic_userinfo_endpoint: null,
-        proxy_base_url: null,
-        user_email: null,
-        sso_provider: null,
-        role_mappings: null,
-      });
+      expect(updateSSOSettings).toHaveBeenCalledWith("test-token", expectedSettings);
     });
 
     expect(NotificationsManager.success).toHaveBeenCalledWith("SSO settings cleared successfully");
