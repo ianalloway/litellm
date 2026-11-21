@@ -186,6 +186,42 @@ describe("CostBreakdownViewer", () => {
     expect(screen.getByText(/\(Cached\)/)).toBeInTheDocument();
   });
 
+  it("separates billable input from cache read and write costs", async () => {
+    const breakdown: CostBreakdown = {
+      input_cost: 0.07,
+      cache_read_cost: 0.02,
+      cache_creation_cost: 0.01,
+    };
+
+    renderWithProviders(
+      <CostBreakdownViewer
+        costBreakdown={breakdown}
+        totalSpend={0.07}
+        promptTokens={300}
+        rawInputTokens={200}
+        cacheReadTokens={100}
+        cacheCreationTokens={0}
+      />,
+    );
+
+    await expandCostBreakdown();
+
+    expect(screen.getByText("Input Cost:").parentElement).toHaveTextContent(/0\.04.*200 tokens/);
+    expect(screen.getByText("Cache Read Cost:").parentElement).toHaveTextContent(/0\.02.*100 tokens/);
+    expect(screen.getByText("Cache Write Cost:").parentElement).toHaveTextContent(/0\.01000000$/);
+    expect(screen.queryByText(/300 prompt tokens/)).not.toBeInTheDocument();
+  });
+
+  it("displays a fixed margin when it is the only supplied cost detail", async () => {
+    const breakdown: CostBreakdown = { margin_fixed_amount: 0.005 };
+
+    renderWithProviders(<CostBreakdownViewer costBreakdown={breakdown} totalSpend={0.005} />);
+
+    await expandCostBreakdown();
+
+    expect(screen.getByText("Margin:").parentElement).toHaveTextContent(/\+\$0\.005/);
+  });
+
   it("shows discount label with percentage when panel is expanded", async () => {
     const breakdown: CostBreakdown = {
       input_cost: 0.01,
