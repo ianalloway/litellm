@@ -32,6 +32,7 @@ from litellm.proxy._types import (
 )
 from litellm.proxy.auth.auth_checks import (
     ExperimentalUIJWTToken,
+    LITELLM_SESSION_TOKEN_PREFIX,
     _cache_management_object,
     _can_object_call_model,
     _can_object_call_vector_stores,
@@ -51,7 +52,7 @@ from litellm.proxy.auth.auth_checks import (
 )
 from litellm.caching.in_memory_cache import InMemoryCache
 from litellm.constants import DEFAULT_MANAGEMENT_OBJECT_IN_MEMORY_CACHE_TTL
-from litellm.proxy.common_utils.encrypt_decrypt_utils import decrypt_value_helper
+from litellm.proxy.common_utils.encrypt_decrypt_utils import decrypt_bearer_token
 from litellm.proxy.common_utils.user_api_key_cache import UserApiKeyCache
 from litellm.utils import get_utc_datetime
 
@@ -110,9 +111,7 @@ def test_get_experimental_ui_login_jwt_auth_token_valid(valid_sso_user_defined_v
     )
 
     # Decrypt and verify token contents
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     # Check that decrypted_token is not None before using json.loads
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
@@ -138,9 +137,7 @@ def test_get_cli_jwt_auth_token_includes_team_alias(valid_sso_user_defined_value
         team_alias="test-team",
     )
 
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
 
@@ -155,9 +152,7 @@ def test_get_experimental_ui_login_jwt_auth_token_uses_10_min_expiry(
     token = ExperimentalUIJWTToken.get_experimental_ui_login_jwt_auth_token(
         valid_sso_user_defined_values
     )
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
     expires = datetime.fromisoformat(token_data["expires"].replace("Z", "+00:00"))
@@ -177,9 +172,7 @@ def test_experimental_ui_token_ignores_litellm_ui_session_duration(
     token = ExperimentalUIJWTToken.get_experimental_ui_login_jwt_auth_token(
         valid_sso_user_defined_values
     )
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
     expires = datetime.fromisoformat(token_data["expires"].replace("Z", "+00:00"))
@@ -527,9 +520,7 @@ def test_get_cli_jwt_auth_token_default_expiration(valid_sso_user_defined_values
     token = ExperimentalUIJWTToken.get_cli_jwt_auth_token(valid_sso_user_defined_values)
 
     # Decrypt and verify token contents
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
 
@@ -573,9 +564,7 @@ def test_get_cli_jwt_auth_token_custom_expiration(
     )
 
     # Decrypt and verify token contents
-    decrypted_token = decrypt_value_helper(
-        token, key="ui_hash_key", exception_type="debug"
-    )
+    decrypted_token = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted_token is not None
     token_data = json.loads(decrypted_token)
 
@@ -593,9 +582,7 @@ def test_get_cli_jwt_auth_token_unique_per_session(valid_sso_user_defined_values
     from litellm.constants import CLI_SESSION_KEY_PREFIX
 
     def _decode(token: str) -> dict:
-        decrypted = decrypt_value_helper(
-            token, key="ui_hash_key", exception_type="debug"
-        )
+        decrypted = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
         assert decrypted is not None
         return json.loads(decrypted)
 
@@ -619,7 +606,7 @@ def test_get_cli_jwt_auth_token_applies_fallback_budget(valid_sso_user_defined_v
     token = ExperimentalUIJWTToken.get_cli_jwt_auth_token(
         valid_sso_user_defined_values, max_budget=litellm.max_ui_session_budget
     )
-    decrypted = decrypt_value_helper(token, key="ui_hash_key", exception_type="debug")
+    decrypted = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted is not None
     assert json.loads(decrypted).get("max_budget") == litellm.max_ui_session_budget
 
@@ -630,7 +617,7 @@ def test_get_cli_jwt_auth_token_no_fallback_when_budget_provided(
     token = ExperimentalUIJWTToken.get_cli_jwt_auth_token(
         valid_sso_user_defined_values, max_budget=None
     )
-    decrypted = decrypt_value_helper(token, key="ui_hash_key", exception_type="debug")
+    decrypted = decrypt_bearer_token(token, prefix=LITELLM_SESSION_TOKEN_PREFIX)
     assert decrypted is not None
     assert json.loads(decrypted).get("max_budget") is None
 
