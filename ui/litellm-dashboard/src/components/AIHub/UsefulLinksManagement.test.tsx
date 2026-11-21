@@ -24,14 +24,13 @@ const mockedUpdateUsefulLinksCall = vi.mocked(updateUsefulLinksCall);
 const mockedGetProxyBaseUrl = vi.mocked(getProxyBaseUrl);
 const mockedNotifications = vi.mocked(NotificationsManager);
 
+function hubInfoWithLinks(links: Record<string, string>) {
+  return { docs_title: "Docs", custom_docs_description: null, litellm_version: "1.0.0", useful_links: links };
+}
+
 describe("UsefulLinksManagement", () => {
   beforeEach(() => {
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {},
-    });
+    mockedGetPublicModelHubInfo.mockResolvedValue(hubInfoWithLinks({}));
     mockedUpdateUsefulLinksCall.mockResolvedValue({});
     mockedGetProxyBaseUrl.mockReturnValue("https://proxy.example.com");
   });
@@ -71,16 +70,13 @@ describe("UsefulLinksManagement", () => {
 
   it("should rearrange links and save the new order", async () => {
     const user = userEvent.setup();
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {
+    mockedGetPublicModelHubInfo.mockResolvedValue(
+      hubInfoWithLinks({
         "First Link": "https://first.example.com",
         "Second Link": "https://second.example.com",
         "Third Link": "https://third.example.com",
-      },
-    });
+      }),
+    );
 
     render(<UsefulLinksManagement accessToken="token" userRole="Admin" />);
 
@@ -112,14 +108,11 @@ describe("UsefulLinksManagement", () => {
 
   it("should edit a link when edit button is clicked", async () => {
     const user = userEvent.setup();
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {
+    mockedGetPublicModelHubInfo.mockResolvedValue(
+      hubInfoWithLinks({
         "Test Link": "https://test.example.com",
-      },
-    });
+      }),
+    );
 
     render(<UsefulLinksManagement accessToken="token" userRole="Admin" />);
 
@@ -136,14 +129,11 @@ describe("UsefulLinksManagement", () => {
 
   it("should update a link when save is clicked in edit mode", async () => {
     const user = userEvent.setup();
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {
+    mockedGetPublicModelHubInfo.mockResolvedValue(
+      hubInfoWithLinks({
         "Test Link": "https://test.example.com",
-      },
-    });
+      }),
+    );
 
     render(<UsefulLinksManagement accessToken="token" userRole="Admin" />);
 
@@ -172,14 +162,11 @@ describe("UsefulLinksManagement", () => {
 
   it("should cancel editing when cancel button is clicked", async () => {
     const user = userEvent.setup();
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {
+    mockedGetPublicModelHubInfo.mockResolvedValue(
+      hubInfoWithLinks({
         "Test Link": "https://test.example.com",
-      },
-    });
+      }),
+    );
 
     render(<UsefulLinksManagement accessToken="token" userRole="Admin" />);
 
@@ -204,15 +191,12 @@ describe("UsefulLinksManagement", () => {
 
   it("should not move down the last item in rearrange mode", async () => {
     const user = userEvent.setup();
-    mockedGetPublicModelHubInfo.mockResolvedValue({
-      docs_title: "Docs",
-      custom_docs_description: null,
-      litellm_version: "1.0.0",
-      useful_links: {
+    mockedGetPublicModelHubInfo.mockResolvedValue(
+      hubInfoWithLinks({
         "First Link": "https://first.example.com",
         "Second Link": "https://second.example.com",
-      },
-    });
+      }),
+    );
 
     render(<UsefulLinksManagement accessToken="token" userRole="Admin" />);
 
